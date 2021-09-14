@@ -152,9 +152,9 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>168</LineNumber>
+          <LineNumber>193</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134219350</Address>
+          <Address>134219226</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -163,7 +163,23 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>.\main.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\drivecontrol\main.c\168</Expression>
+          <Expression>\\drivecontrol\main.c\193</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>5</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134219138</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>.\it.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\drivecontrol\it.c\5</Expression>
         </Bp>
       </Breakpoint>
       <Tracepoint>

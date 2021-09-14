@@ -21,7 +21,8 @@ typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
 void init_CPU(void);
 void init_PER(void);
 void init_GPIO(void);
-void init_TIMER(void);
+void init_TIMER1(void);
+void init_TIMER2(void);
 void deinit_all_GPIO(void);
 void deinit_TIMER(MDR_TIMER_TypeDef *Timer);
 void init_ADC(void);
@@ -33,5 +34,4 @@ uint16_t get_OBJ_angle(void);
 uint16_t get_COM_angle(void);
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel);
 
-void Timer1_IRQHandler(void);
-void ADC_IRQHandler(void);
+void Timer2_IRQHandler(void);
