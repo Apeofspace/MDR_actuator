@@ -180,8 +180,8 @@ uint16_t get_COM_angle(void){
 	PORT_SetBits(MDR_PORTC, PORT_Pin_0);
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));
 	PORT_ResetBits(MDR_PORTC, PORT_Pin_0);		
-//	return filter_analog(ADC1_GetResult()&ADC_MAX, COM);
-	return ADC1_GetResult()&ADC_MAX;
+	return filter_analog(ADC1_GetResult()&ADC_MAX, COM);
+//	return ADC1_GetResult()&ADC_MAX;
 }
 
 uint16_t get_OBJ_angle(void){
@@ -190,20 +190,18 @@ uint16_t get_OBJ_angle(void){
 	PORT_SetBits(MDR_PORTC, PORT_Pin_1);
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));
 	PORT_ResetBits(MDR_PORTC, PORT_Pin_1);		
-//	return filter_analog(ADC1_GetResult()&ADC_MAX, OBJ);
-	return ADC1_GetResult()&ADC_MAX;
+	return filter_analog(ADC1_GetResult()&ADC_MAX, OBJ);
+//	return ADC1_GetResult()&ADC_MAX;
 }
 
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 	static uint16_t filter[FILTER_SIZE][2];
 	static uint8_t filter_count = 0;
 	uint16_t sum = 0; //должно хватить: 4 бита впереди свободные. значит можно просуммировать до 16 значений
-	uint8_t i;
-	
 	filter[filter_count][channel] = data; 
 	filter_count++;
 	if (filter_count >= FILTER_SIZE) filter_count = 0;
-	for (i = 0; i < FILTER_SIZE; i++) sum += filter[i][channel]; 
+	for (uint8_t i = 0; i < FILTER_SIZE; i++) sum += filter[i][channel]; 
 	return(sum/FILTER_SIZE);	
 }
 
