@@ -26,7 +26,7 @@ void init_GPIO(){
 	
 	deinit_all_GPIO();
 	//leds
-	GPIO_user_init.PORT_Pin       = (PORT_Pin_0|PORT_Pin_11);
+	GPIO_user_init.PORT_Pin       = (PORT_Pin_0|PORT_Pin_1);
 	GPIO_user_init.PORT_OE        = PORT_OE_OUT;
 	GPIO_user_init.PORT_PULL_UP   = PORT_PULL_UP_OFF;
 	GPIO_user_init.PORT_PULL_DOWN = PORT_PULL_DOWN_OFF;
@@ -180,16 +180,18 @@ uint16_t get_COM_angle(void){
 	PORT_SetBits(MDR_PORTC, PORT_Pin_0);
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));
 	PORT_ResetBits(MDR_PORTC, PORT_Pin_0);		
-	return filter_analog(ADC1_GetResult()&ADC_MAX, COM);
+//	return filter_analog(ADC1_GetResult()&ADC_MAX, COM);
+	return ADC1_GetResult()&ADC_MAX;
 }
 
 uint16_t get_OBJ_angle(void){
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
 	ADC1_Start();
-	PORT_SetBits(MDR_PORTC, PORT_Pin_11);
+	PORT_SetBits(MDR_PORTC, PORT_Pin_1);
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));
-	PORT_ResetBits(MDR_PORTC, PORT_Pin_11);		
-	return filter_analog(ADC1_GetResult()&ADC_MAX, OBJ);
+	PORT_ResetBits(MDR_PORTC, PORT_Pin_1);		
+//	return filter_analog(ADC1_GetResult()&ADC_MAX, OBJ);
+	return ADC1_GetResult()&ADC_MAX;
 }
 
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){

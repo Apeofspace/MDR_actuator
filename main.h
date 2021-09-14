@@ -9,7 +9,7 @@
 #define T1PSG 79
 #define T1MIN 0
 #define T1MAX 99
-#define DEADTIMECONST 8 //ѕри 80м√ц 1 = 0.125 *10^-6 с (при DTG от CPU_CLK) 8 бит
+#define DEADTIMECONST 80  //ѕри 80м√ц 1 = 0.125 *10^-6 с (при DTG от CPU_CLK) 8 бит
 #define ADC_MAX 0xfff
 #define FILTER_SIZE 5UL
 
