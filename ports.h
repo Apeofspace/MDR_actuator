@@ -7,5 +7,5 @@
 #define PWM_PORT MDR_PORTA
 #define CH1_PIN PORT_Pin_1
 #define CH2_PIN PORT_Pin_3
-#define CH3_PIN PORT_Pin_5
-#define CH4_PIN PORT_Pin_9
+#define CH1N_PIN PORT_Pin_2
+#define CH2N_PIN PORT_Pin_4

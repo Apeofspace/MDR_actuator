@@ -39,7 +39,7 @@ void init_GPIO(){
 	PORT_Init(MDR_PORTC, &GPIO_user_init);
 	
 	//timer1 PWM
-	GPIO_user_init.PORT_Pin       = (CH1_PIN|CH2_PIN|CH3_PIN|CH4_PIN);
+	GPIO_user_init.PORT_Pin       = (CH1_PIN|CH2_PIN|CH1N_PIN|CH2N_PIN);
 	GPIO_user_init.PORT_OE        = PORT_OE_OUT;
 	GPIO_user_init.PORT_PULL_UP   = PORT_PULL_UP_OFF;
 	GPIO_user_init.PORT_PULL_DOWN = PORT_PULL_DOWN_OFF;
@@ -99,24 +99,17 @@ void init_TIMER(){
 	
 	/*Настройка каналов*/
 	MDR_TIMER1->CH1_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos); //формат сигнала 6: 1 если CNT<CCR
-  MDR_TIMER1->CH1_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos); //выход всегда вкл., 2 на выход REF, 3 на выход DTG
+  MDR_TIMER1->CH1_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos)| //выход всегда вкл., 2 на выход REF, 3 на выход DTG
+													 (1 << TIMER_CH_CNTRL1_NSELOE_Pos )|(3 << TIMER_CH_CNTRL1_NSELO_Pos);
 	MDR_TIMER1->CH1_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
 	MDR_TIMER1->CCR1 = T1MAX;	
 	
 	MDR_TIMER1->CH2_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos);
-  MDR_TIMER1->CH2_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos); //выход всегда вкл., 2 на выход REF, 3 на выход DTG
+  MDR_TIMER1->CH2_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos)| //выход всегда вкл., 2 на выход REF, 3 на выход DTG
+													 (1 << TIMER_CH_CNTRL1_NSELOE_Pos )|(3 << TIMER_CH_CNTRL1_NSELO_Pos);
 	MDR_TIMER1->CH2_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
 	MDR_TIMER1->CCR2 = T1MAX;	
 	
-	MDR_TIMER1->CH3_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos);
-  MDR_TIMER1->CH3_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos); //выход всегда вкл., 2 на выход REF, 3 на выход DTG
-	MDR_TIMER1->CH3_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
-	MDR_TIMER1->CCR3 = T1MAX;	
-	
-	MDR_TIMER1->CH4_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos);
-  MDR_TIMER1->CH4_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos); //выход всегда вкл., 2 на выход REF, 3 на выход DTG
-	MDR_TIMER1->CH4_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
-	MDR_TIMER1->CCR4 = T1MAX;	
 	
 	/*Разрешения работы*/
 //	MDR_TIMER1->IE = 0x00001102;		//прерывание по cnt=arr
@@ -146,17 +139,6 @@ void init_ADC(void)
 	ADC1_Cmd(ENABLE);				//ВКЛЮЧИТЬ АЦП				
 }
 
-/* аналог MAP из ардуинки */
-uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert){
-	uint32_t delta_range = range_max-range_min;
-	uint32_t delta_base = base_max - base_min;
-	if ((range_min>range_max) || (base_min>base_max)) return 0;
-	float k = (float)(data-base_min) / (float)delta_base; // проверить битность, float не подойдет для больших чисел?
-	float t =  k * (float)delta_range;
-	if ((uint32_t)t > delta_range) t = (float)delta_range; //на всякий случай
-	return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t;
-}
-
 void init_PER(void){		
 	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTC, ENABLE);		
 	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTA, ENABLE);	
@@ -166,6 +148,17 @@ void init_PER(void){
 	/*Тактирование таймеров*/
 	MDR_RST_CLK->PER_CLOCK |= (1 << 14 );
 	MDR_RST_CLK->TIM_CLOCK = 0x01000000; //(1 << 24);
+}
+
+/* аналог MAP из ардуинки */
+uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert){
+	uint32_t delta_range = range_max-range_min;
+	uint32_t delta_base = base_max - base_min;
+	if ((range_min>range_max) || (base_min>base_max)) return 0;
+	float k = (float)(data-base_min) / (float)delta_base; // проверить битность, float не подойдет для больших чисел?
+	float t =  k * (float)delta_range;
+	if ((uint32_t)t > delta_range) t = (float)delta_range; //на всякий случай
+	return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t;
 }
 
 void control_loop(void){
@@ -219,17 +212,14 @@ void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
 		case PWMFORWARD:
 		{
 			MDR_TIMER1->CCR1 = mapped_ccr;
-			MDR_TIMER1->CCR2 = T1MAX-mapped_ccr;
-			MDR_TIMER1->CCR3 = T1MAX; //выключен
-			MDR_TIMER1->CCR4 = T1MIN; //включен
+			MDR_TIMER1->CCR2 = T1MAX; //выключен
 			break;
 		}			
 		case PWMBACKWARD:
 		{
 			MDR_TIMER1->CCR1 = T1MAX; //выключен
-			MDR_TIMER1->CCR2 = T1MIN; //включен
-			MDR_TIMER1->CCR3 = mapped_ccr;
-			MDR_TIMER1->CCR4 = T1MAX-mapped_ccr;
+			MDR_TIMER1->CCR2 = mapped_ccr;
+
 		}
 	}
 }
