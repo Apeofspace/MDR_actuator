@@ -118,8 +118,8 @@ void init_TIMER2(){
 	deinit_TIMER(MDR_TIMER2);
 	
 	/*Настройки таймера*/
-	MDR_TIMER2->PSG = 79; // Предделитель частоты
-	MDR_TIMER2->ARR = 999; // Основание счета (16 бит)
+	MDR_TIMER2->PSG = T2PSG; // Предделитель частоты
+	MDR_TIMER2->ARR = T2ARR; // Основание счета (16 бит)
 	MDR_TIMER2->CNTRL = TIMER_CNTRL_ARRB_EN; //буферизация 
 	
 //	/*Настройка каналов*/
@@ -142,8 +142,7 @@ void init_TIMER2(){
 	MDR_TIMER2->CNTRL |= TIMER_CNTRL_CNT_EN; // Счет вверх по TIM_CLK, и включить таймер.	
 }
 
-void init_ADC(void)
-{
+void init_ADC(void){
 	ADC_InitTypeDef ADC_InitStruct;
 	ADCx_InitTypeDef ADCx_InitStruct;
 	
@@ -151,15 +150,17 @@ void init_ADC(void)
   ADC_StructInit(&ADC_InitStruct);
   ADCx_StructInit(&ADCx_InitStruct);
 	
+	ADC_InitStruct.ADC_StartDelay = 0x05;
+	ADC_InitStruct.ADC_SynchronousMode = ADC_SyncMode_Synchronous;
+	
+	
 	ADCx_InitStruct.ADC_SamplingMode = ADC_SAMPLING_MODE_SINGLE_CONV;/* режим многократного преобразования */
 	ADCx_InitStruct.ADC_ChannelNumber = ADC_COM_CHANNEL;/* выбор номера канала */
 	ADCx_InitStruct.ADC_Prescaler = ADC_CLK_div_64; //выбор делителя тактовой частоты
-//	ADCx_InitStruct.ADC_DelayGo = 0x7;/* значение задержки перед началом следующего преобразования */
+  ADCx_InitStruct.ADC_DelayGo = 0x7;/* Дополнительная задержка перед началом преобразования после выбора канала (sequential mode) */
 	
 	ADC_Init(&ADC_InitStruct);
 	ADC1_Init(&ADCx_InitStruct);
-//	ADC1_ITConfig(ADC1_IT_END_OF_CONVERSION, ENABLE);  //разрешить прерывания
-//	NVIC_EnableIRQ(ADC_IRQn); //разрешить прерывания
 	ADC1_Cmd(ENABLE);				//ВКЛЮЧИТЬ АЦП				
 }
 
