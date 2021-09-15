@@ -23,7 +23,6 @@ void init_CPU(){
 
 void init_GPIO(){
 	PORT_InitTypeDef GPIO_user_init;
-	
 	deinit_all_GPIO();
 	//leds
 	GPIO_user_init.PORT_Pin       = (PORT_Pin_0|PORT_Pin_1);
@@ -106,10 +105,7 @@ void init_TIMER1(){
 	MDR_TIMER1->CH2_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
 	MDR_TIMER1->CCR2 = T1MAX;	
 	
-	
 	/*Разрешения работы*/
-//	MDR_TIMER1->IE = 0x00001102;		//прерывание по cnt=arr
-//	NVIC_EnableIRQ(Timer1_IRQn); //разрешить прерывания таймера	
 	MDR_TIMER1->CNTRL |= TIMER_CNTRL_CNT_EN; // Счет вверх по TIM_CLK, и включить таймер.	
 }
 
@@ -121,20 +117,6 @@ void init_TIMER2(){
 	MDR_TIMER2->PSG = T2PSG; // Предделитель частоты
 	MDR_TIMER2->ARR = T2ARR; // Основание счета (16 бит)
 	MDR_TIMER2->CNTRL = TIMER_CNTRL_ARRB_EN; //буферизация 
-	
-//	/*Настройка каналов*/
-//	MDR_TIMER2->CH1_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos); //формат сигнала 6: 1 если CNT<CCR
-//  MDR_TIMER2->CH1_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos)| //выход всегда вкл., 2 на выход REF, 3 на выход DTG
-//													 (1 << TIMER_CH_CNTRL1_NSELOE_Pos )|(3 << TIMER_CH_CNTRL1_NSELO_Pos);
-//	MDR_TIMER2->CH1_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
-//	MDR_TIMER2->CCR1 = T1MAX;	
-//	
-//	MDR_TIMER2->CH2_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos);
-//  MDR_TIMER2->CH2_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos)| //выход всегда вкл., 2 на выход REF, 3 на выход DTG
-//													 (1 << TIMER_CH_CNTRL1_NSELOE_Pos )|(3 << TIMER_CH_CNTRL1_NSELO_Pos);
-//	MDR_TIMER2->CH2_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
-//	MDR_TIMER2->CCR2 = T1MAX;	
-	
 	
 	/*Разрешения работы*/
 	MDR_TIMER2->IE = 0x00001102;		//прерывание по cnt=arr
@@ -151,7 +133,7 @@ void init_ADC(void){
   ADCx_StructInit(&ADCx_InitStruct);
 	
 	ADC_InitStruct.ADC_StartDelay = 0x05;
-	ADC_InitStruct.ADC_SynchronousMode = ADC_SyncMode_Synchronous;
+//	ADC_InitStruct.ADC_SynchronousMode = ADC_SyncMode_Synchronous;
 	
 	
 	ADCx_InitStruct.ADC_SamplingMode = ADC_SAMPLING_MODE_SINGLE_CONV;/* режим многократного преобразования */
@@ -190,12 +172,12 @@ uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uin
 void control_loop(void){
 	uint16_t COM_angle = get_COM_angle();
 	uint16_t OBJ_angle = get_OBJ_angle();
-	
+
 	if (COM_angle>OBJ_angle){		
-		changePWM(PWMFORWARD, COM_angle-OBJ_angle);		
+		changePWM(1, COM_angle-OBJ_angle);		
 	}
 	if (OBJ_angle>COM_angle){
-		changePWM(PWMBACKWARD, OBJ_angle-COM_angle);		
+		changePWM(0, OBJ_angle-COM_angle);		
 	}
 	
 }
@@ -232,21 +214,25 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 }
 
 void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
-	uint32_t mapped_ccr = map_ADC_result(PWMpower, 0, ADC_MAX, T1MIN, T1MAX, MAPINVERT); //возможно т1мин надо сделать 1 чтобы был какойто шим всегда
-	//несимметричный
+	uint32_t mapped_ccr = map_ADC_result(PWMpower, 0, ADC_MAX, 0, T1MAX, MAPINVERT); //возможно т1мин надо сделать 1 чтобы был какойто шим всегда
+//	//несимметричный
+//	if (direction == PWMFORWARD){
+//		MDR_TIMER1->CCR1 = mapped_ccr;
+//		MDR_TIMER1->CCR2 = T1MAX; //выключен
+//	}
+//	if (direction == PWMBACKWARD){
+//		MDR_TIMER1->CCR1 = T1MAX; //выключен
+//		MDR_TIMER1->CCR2 = mapped_ccr;
+//	}
+	
 	switch (direction){
 		case PWMFORWARD:
-		{
 			MDR_TIMER1->CCR1 = mapped_ccr;
 			MDR_TIMER1->CCR2 = T1MAX; //выключен
-			break;
-		}			
+			break;		
 		case PWMBACKWARD:
-		{
 			MDR_TIMER1->CCR1 = T1MAX; //выключен
 			MDR_TIMER1->CCR2 = mapped_ccr;
-
-		}
 	}
 }
 
@@ -254,9 +240,9 @@ int main(){
 	init_CPU();
 	init_PER();
 	init_GPIO();
+	init_ADC();
 	init_TIMER1();
 	init_TIMER2();
-	init_ADC();
 	while (1){	
 //		control_loop();
 	}
