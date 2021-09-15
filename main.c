@@ -158,30 +158,6 @@ void init_PER(void){
 	MDR_RST_CLK->TIM_CLOCK = (RST_CLK_TIM_CLOCK_TIM1_CLK_EN)|(RST_CLK_TIM_CLOCK_TIM2_CLK_EN);
 }
 
-/* аналог MAP из ардуинки */
-uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert){
-	uint32_t delta_range = range_max-range_min;
-	uint32_t delta_base = base_max - base_min;
-	if ((range_min>range_max) || (base_min>base_max)) return 0;
-	float k = (float)(data-base_min) / (float)delta_base; // проверить битность, float не подойдет для больших чисел?
-	float t =  k * (float)delta_range;
-	if ((uint32_t)t > delta_range) t = (float)delta_range; //на всякий случай
-	return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t;
-}
-
-void control_loop(void){
-	uint16_t COM_angle = get_COM_angle();
-	uint16_t OBJ_angle = get_OBJ_angle();
-
-	if (COM_angle>OBJ_angle){		
-		changePWM(1, COM_angle-OBJ_angle);		
-	}
-	if (OBJ_angle>COM_angle){
-		changePWM(0, OBJ_angle-COM_angle);		
-	}
-	
-}
-
 uint16_t get_COM_angle(void){
 	ADC1_SetChannel(ADC_COM_CHANNEL);
 	ADC1_Start();
@@ -213,18 +189,51 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 	return(sum/FILTER_SIZE);	
 }
 
-void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
-	uint32_t mapped_ccr = map_ADC_result(PWMpower, 0, ADC_MAX, 0, T1MAX, MAPINVERT); //возможно т1мин надо сделать 1 чтобы был какойто шим всегда
-//	//несимметричный
-//	if (direction == PWMFORWARD){
-//		MDR_TIMER1->CCR1 = mapped_ccr;
-//		MDR_TIMER1->CCR2 = T1MAX; //выключен
-//	}
-//	if (direction == PWMBACKWARD){
-//		MDR_TIMER1->CCR1 = T1MAX; //выключен
-//		MDR_TIMER1->CCR2 = mapped_ccr;
-//	}
+/* аналог MAP из ардуинки */
+uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert){
+	uint32_t delta_range = range_max-range_min;
+	uint32_t delta_base = base_max - base_min;
+	if ((range_min>range_max) || (base_min>base_max)) return 0;
+	float k = (float)(data-base_min) / (float)delta_base; //  ВОТ ТУТ ЧТОТО НЕ ТО явно
+	float t =  k * (float)delta_range;
+	if ((uint32_t)t > delta_range) t = (float)delta_range; //на всякий случай
+	return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t;
+}
+
+/*stage2threshhold значение от 0 до 1 при котором переходит изменение скорости*/
+uint32_t map_corrected_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert, float stage2threshhold){
+	if ((range_min>range_max) || (base_min>base_max)) return 0;
+	uint32_t delta_base = base_max - base_min;
+	uint32_t delta_range = range_max - range_min;
+	float distance_koef = 1-((float)(data-base_min) / (float)delta_base);
 	
+	if (distance_koef<stage2threshhold){ //STAGE 1.
+		return (invert == MAPNONINVERT)? range_max : range_min; //макс скорость если мы далеко от точки
+	}
+	else { // STAGE 2. снижаем скорость, если близко к точке
+		if (distance_koef > (float)PWMSTOPTHRESHOLD) return (invert == MAPNONINVERT)? range_min : range_max; //если мы очень близко к точке, то скорость нулевая
+		float st2_distance_koef = 1 - ((distance_koef-stage2threshhold)/(1-stage2threshhold));
+		float t =  st2_distance_koef * (float)delta_range;
+		return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t; 
+	}
+}
+
+void control_loop(void){
+	uint16_t COM_angle = get_COM_angle();
+	uint16_t OBJ_angle = get_OBJ_angle();
+
+	if (COM_angle>OBJ_angle){		
+		changePWM(PWMFORWARD, COM_angle-OBJ_angle);		
+	}
+	if (OBJ_angle>COM_angle){
+		changePWM(PWMBACKWARD, OBJ_angle-COM_angle);		
+	}
+}
+
+void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
+//	uint32_t mapped_ccr = map_ADC_result(PWMpower, 0, ADC_MAX, 0, T1MAX, MAPINVERT); //возможно т1мин надо сделать 1 чтобы был какойто шим всегда
+	uint32_t mapped_ccr = map_corrected_PWM(PWMpower, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)PWMSTAGE2THRESHOLD);
+//	//несимметричный	
 	switch (direction){
 		case PWMFORWARD:
 			MDR_TIMER1->CCR1 = mapped_ccr;
@@ -238,12 +247,28 @@ void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
 
 int main(){
 	init_CPU();
-	init_PER();
+	
+//		тесты
+//	uint32_t mapped_ccr1= map_corrected_PWM(0xFFF, 0, 0xFFF, 0, 99, MAPINVERT, (float)0.7);
+//	uint32_t mapped_ccr2 = map_corrected_PWM(0x0, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.7);
+//	uint32_t mapped_ccr3 = map_corrected_PWM(0x7FF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.7);
+//	uint32_t mapped_ccr4 = map_corrected_PWM(0x0FF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.7);
+//	uint32_t mapped_ccr5 = map_corrected_PWM(0xCFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.7);
+//	uint32_t mapped_ccr6 = map_corrected_PWM(0xCFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.3);
+//	uint32_t mapped_ccr7 = map_corrected_PWM(0xCFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.9);
+//	uint32_t mapped_ccr8 = map_corrected_PWM(0xFFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.9);
+//	uint32_t mapped_ccr9 = map_corrected_PWM(0xCFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)1);
+	
+	
+  init_PER();
 	init_GPIO();
 	init_ADC();
 	init_TIMER1();
 	init_TIMER2();
+	
+	
 	while (1){	
 //		control_loop();
+		
 	}
 }

@@ -4,5 +4,6 @@
 void Timer2_IRQHandler(void){
 	MDR_TIMER2->STATUS &= ~(1UL << 1UL);
 	control_loop();
+
 }
 
