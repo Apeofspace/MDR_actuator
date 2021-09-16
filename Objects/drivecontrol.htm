@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\Objects\drivecontrol.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\drivecontrol.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Thu Sep 16 10:46:48 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Thu Sep 16 12:47:35 2021
 <BR><P>
 <H3>Maximum Stack Usage =        168 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -479,7 +479,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[34]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;control_loop
 </UL>
 
-<P><STRONG><a name="[34]"></a>control_loop</STRONG> (Thumb, 92 bytes, Stack size 16 bytes, main.o(.text.control_loop))
+<P><STRONG><a name="[34]"></a>control_loop</STRONG> (Thumb, 136 bytes, Stack size 16 bytes, main.o(.text.control_loop))
 <BR><BR>[Stack]<UL><LI>Max Depth = 160<LI>Call Chain = control_loop &rArr; changePWM &rArr; map_corrected_PWM &rArr; __aeabi_fmul
 </UL>
 <BR>[Calls]<UL><LI><a href="#[38]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;get_OBJ_angle
@@ -511,7 +511,7 @@ Global Symbols
 <LI><a href="#[37]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;get_COM_angle
 </UL>
 
-<P><STRONG><a name="[37]"></a>get_COM_angle</STRONG> (Thumb, 50 bytes, Stack size 8 bytes, main.o(.text.get_COM_angle))
+<P><STRONG><a name="[37]"></a>get_COM_angle</STRONG> (Thumb, 52 bytes, Stack size 8 bytes, main.o(.text.get_COM_angle))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = get_COM_angle &rArr; filter_analog
 </UL>
 <BR>[Calls]<UL><LI><a href="#[3e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;filter_analog
@@ -522,7 +522,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[34]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;control_loop
 </UL>
 
-<P><STRONG><a name="[38]"></a>get_OBJ_angle</STRONG> (Thumb, 50 bytes, Stack size 8 bytes, main.o(.text.get_OBJ_angle))
+<P><STRONG><a name="[38]"></a>get_OBJ_angle</STRONG> (Thumb, 52 bytes, Stack size 8 bytes, main.o(.text.get_OBJ_angle))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = get_OBJ_angle &rArr; filter_analog
 </UL>
 <BR>[Calls]<UL><LI><a href="#[3e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;filter_analog

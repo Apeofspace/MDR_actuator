@@ -159,21 +159,17 @@ void init_PER(void){
 uint16_t get_COM_angle(void){
 	ADC1_SetChannel(ADC_COM_CHANNEL);
 	ADC1_Start();
-//	PORT_SetBits(MDR_PORTC, PORT_Pin_0);
-	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));
-//	PORT_ResetBits(MDR_PORTC, PORT_Pin_0);		
-	return filter_analog(ADC1_GetResult()&ADC_MAX, COM);
-//	return ADC1_GetResult()&ADC_MAX;
+	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
+	return filter_analog(ADC1_GetResult()&0xFFC, COM);
+//	return ADC1_GetResult()&ADC_MAX; //no filter
 }
 
 uint16_t get_OBJ_angle(void){
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
 	ADC1_Start();
-//	PORT_SetBits(MDR_PORTC, PORT_Pin_1);
-	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));
-//	PORT_ResetBits(MDR_PORTC, PORT_Pin_1);		
-	return filter_analog(ADC1_GetResult()&ADC_MAX, OBJ);
-//	return ADC1_GetResult()&ADC_MAX;
+	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
+	return filter_analog(ADC1_GetResult()&0xFFC, OBJ);
+//	return ADC1_GetResult()&ADC_MAX; //no filter
 }
 
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
@@ -188,7 +184,7 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 }
 
 /* аналог MAP из ардуинки */
-//uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert){
+uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert){
 //	uint32_t delta_range = range_max-range_min;
 //	uint32_t delta_base = base_max - base_min;
 //	if ((range_min>range_max) || (base_min>base_max)) return 0;
@@ -196,7 +192,7 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 //	float t =  k * (float)delta_range;
 //	if ((uint32_t)t > delta_range) t = (float)delta_range; //на всякий случай
 //	return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t;
-//}
+}
 
 /*stage2threshhold значение от 0 до 1 при котором переходит изменение скорости*/
 uint32_t map_corrected_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert, float stage2threshhold){
@@ -218,8 +214,12 @@ uint32_t map_corrected_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, 
 void control_loop(void){
 	uint16_t COM_angle = get_COM_angle();
 	uint16_t OBJ_angle = get_OBJ_angle();
+	
+	//чтобы не вставал в край
+	if (COM_angle<0x100) COM_angle = 0x100;
+	if (COM_angle>0xDFC) COM_angle = 0xDFC;
 
-	if (COM_angle>=OBJ_angle){		
+ 	if (COM_angle>=OBJ_angle){		
 		changePWM(PWMFORWARD, COM_angle-OBJ_angle);		
 	}
 	if (OBJ_angle>COM_angle){

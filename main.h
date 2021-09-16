@@ -10,12 +10,12 @@
 #define T1MIN 0
 #define T1MAX 99
 #define T2PSG 79
-#define T2ARR 999
+#define T2ARR 499
 #define DEADTIMECONST 80  //ѕри 80м√ц 1 = 0.125 *10^-6 с (при DTG от CPU_CLK) 8 бит
 #define ADC_MAX 0xfff
 #define FILTER_SIZE 5UL
-#define PWMSTAGE2THRESHOLD 0.9
-#define PWMSTOPTHRESHOLD 0.99
+#define PWMSTAGE2THRESHOLD 0.80
+#define PWMSTOPTHRESHOLD 0.995
 
 extern uint32_t T1CCR;
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
@@ -33,7 +33,7 @@ void deinit_TIMER(MDR_TIMER_TypeDef *Timer);
 void init_ADC(void);
 
 /*Functions*/
-//uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert);
+uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert);
 uint32_t map_corrected_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert, float stage2threshhold);
 void changePWM(PWM_DIRECTION direction, uint16_t PWMpower);
 void control_loop(void);
