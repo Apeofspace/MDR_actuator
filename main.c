@@ -183,17 +183,6 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 	return(sum/FILTER_SIZE);	
 }
 
-/* аналог MAP из ардуинки */
-uint32_t map_ADC_result(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert){
-//	uint32_t delta_range = range_max-range_min;
-//	uint32_t delta_base = base_max - base_min;
-//	if ((range_min>range_max) || (base_min>base_max)) return 0;
-//	float k = (float)(data-base_min) / (float)delta_base; //  ВОТ ТУТ ЧТОТО НЕ ТО явно
-//	float t =  k * (float)delta_range;
-//	if ((uint32_t)t > delta_range) t = (float)delta_range; //на всякий случай
-//	return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t;
-}
-
 /*stage2threshhold значение от 0 до 1 при котором переходит изменение скорости*/
 uint32_t map_corrected_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert, float stage2threshhold){
 	if ((range_min>range_max) || (base_min>base_max)) return 0;
@@ -210,6 +199,19 @@ uint32_t map_corrected_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, 
 		return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t; 
 	}
 }
+
+/* Коэффициент заполнения умножается на saturation_coef, но не может быть больше 1 */
+uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert){
+	if ((range_min>range_max) || (base_min>base_max) || (data<base_min)) return 0;
+	uint32_t delta_range = range_max-range_min;
+	uint32_t delta_base = base_max - base_min;
+	uint32_t data_prived = data - base_min;
+	float coef_zapoln = 1 - ((float)data_prived/(float)delta_base);
+	coef_zapoln = coef_zapoln * saturation_coef;
+	if (coef_zapoln>1) coef_zapoln = 1;
+	return (invert == MAPNONINVERT)? range_min + (uint32_t)(coef_zapoln*(float)delta_range) : range_max - (uint32_t)(coef_zapoln*(float)delta_range);
+}
+
 
 void control_loop(void){
 	uint16_t COM_angle = get_COM_angle();
@@ -228,7 +230,7 @@ void control_loop(void){
 }
 
 void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
-//	uint32_t mapped_ccr = map_ADC_result(PWMpower, 0, ADC_MAX, 0, T1MAX, MAPINVERT); //возможно т1мин надо сделать 1 чтобы был какойто шим всегда
+//	uint32_t mapped_ccr = map_PWM(PWMpower, 0, ADC_MAX, 0, T1MAX, PWM_SATURATION_COEFFICIENT, MAPINVERT);
 	uint32_t mapped_ccr = map_corrected_PWM(PWMpower, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)PWMSTAGE2THRESHOLD);
 //	//несимметричный	
 	switch (direction){
