@@ -193,7 +193,7 @@ uint32_t map_corrected_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, 
 		return (invert == MAPNONINVERT)? range_max : range_min; //макс скорость если мы далеко от точки
 	}
 	else { // STAGE 2. снижаем скорость, если близко к точке
-		if (distance_koef > (float)PWMSTOPTHRESHOLD) return (invert == MAPNONINVERT)? range_min : range_max; //если мы очень близко к точке, то скорость нулевая
+		if (distance_koef < (float)PWMSTOPTHRESHOLD) return (invert == MAPNONINVERT)? range_min : range_max; //если мы очень близко к точке, то скорость нулевая
 		float st2_distance_koef = 1 - ((distance_koef-stage2threshhold)/(1-stage2threshhold));
 		float t =  st2_distance_koef * (float)delta_range;
 		return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t; 
@@ -207,6 +207,7 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 	uint32_t delta_base = base_max - base_min;
 	uint32_t data_prived = data - base_min;
 	float coef_zapoln = 1 - ((float)data_prived/(float)delta_base);
+	if (coef_zapoln<(float)PWMSTOPTHRESHOLD) return (invert == MAPNONINVERT)? range_min : range_max; //зона нечувствительности
 	coef_zapoln = coef_zapoln * saturation_coef;
 	if (coef_zapoln>1) coef_zapoln = 1;
 	return (invert == MAPNONINVERT)? range_min + (uint32_t)(coef_zapoln*(float)delta_range) : range_max - (uint32_t)(coef_zapoln*(float)delta_range);
@@ -246,19 +247,6 @@ void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
 
 int main(){
 	init_CPU();
-	
-//		тесты
-//	uint32_t mapped_ccr1= map_corrected_PWM(0xFFF, 0, 0xFFF, 0, 99, MAPINVERT, (float)0.7);
-//	uint32_t mapped_ccr2 = map_corrected_PWM(0x0, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.7);
-//	uint32_t mapped_ccr3 = map_corrected_PWM(0x7FF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.7);
-//	uint32_t mapped_ccr4 = map_corrected_PWM(0x0FF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.7);
-//	uint32_t mapped_ccr5 = map_corrected_PWM(0xCFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.7);
-//	uint32_t mapped_ccr6 = map_corrected_PWM(0xCFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.3);
-//	uint32_t mapped_ccr7 = map_corrected_PWM(0xCFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.9);
-//	uint32_t mapped_ccr8 = map_corrected_PWM(0xFFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)0.9);
-//	uint32_t mapped_ccr9 = map_corrected_PWM(0xCFF, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)1);
-	
-	
   init_PER();
 	init_GPIO();
 	init_ADC();
