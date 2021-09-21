@@ -23,18 +23,6 @@ void init_CPU(){
 void init_GPIO(){
 	PORT_InitTypeDef GPIO_user_init;
 	deinit_all_GPIO();
-	//leds
-//	GPIO_user_init.PORT_Pin       = (PORT_Pin_0|PORT_Pin_1);
-//	GPIO_user_init.PORT_OE        = PORT_OE_OUT;
-//	GPIO_user_init.PORT_PULL_UP   = PORT_PULL_UP_OFF;
-//	GPIO_user_init.PORT_PULL_DOWN = PORT_PULL_DOWN_OFF;
-//	GPIO_user_init.PORT_PD_SHM    = PORT_PD_SHM_OFF;
-//	GPIO_user_init.PORT_PD        = PORT_PD_DRIVER;
-//	GPIO_user_init.PORT_GFEN      = PORT_GFEN_OFF;
-//	GPIO_user_init.PORT_FUNC      = PORT_FUNC_PORT;
-//	GPIO_user_init.PORT_SPEED     = PORT_SPEED_MAXFAST;
-//	GPIO_user_init.PORT_MODE      = PORT_MODE_DIGITAL;	
-//	PORT_Init(MDR_PORTC, &GPIO_user_init);
 	
 	//timer1 PWM
 	GPIO_user_init.PORT_Pin       = (CH1_PIN|CH2_PIN|CH1N_PIN|CH2N_PIN);
@@ -132,7 +120,6 @@ void init_ADC(void){
   ADCx_StructInit(&ADCx_InitStruct);
 	
 	ADC_InitStruct.ADC_StartDelay = 0x05;
-//	ADC_InitStruct.ADC_SynchronousMode = ADC_SyncMode_Synchronous;
 	
 	ADCx_InitStruct.ADC_SamplingMode = ADC_SAMPLING_MODE_SINGLE_CONV;/* режим многократного преобразования */
 	ADCx_InitStruct.ADC_ChannelNumber = ADC_COM_CHANNEL;/* выбор номера канала */
@@ -152,7 +139,6 @@ void init_PER(void){
 	
 	/*Тактирование таймеров*/
 	MDR_RST_CLK->PER_CLOCK |= (1 << 14 )|(1 << 15 );
-//	MDR_RST_CLK->TIM_CLOCK = 0x01000000; //(1 << 24);
 	MDR_RST_CLK->TIM_CLOCK = (RST_CLK_TIM_CLOCK_TIM1_CLK_EN)|(RST_CLK_TIM_CLOCK_TIM2_CLK_EN);
 }
 
@@ -183,30 +169,13 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 	return(sum/FILTER_SIZE);	
 }
 
-/*stage2threshhold значение от 0 до 1 при котором переходит изменение скорости*/
-uint32_t map_corrected_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, MAP_INVERT invert, float stage2threshhold){
-	if ((range_min>range_max) || (base_min>base_max)) return 0;
-	uint32_t delta_base = base_max - base_min;
-	uint32_t delta_range = range_max - range_min;
-	float distance_koef = 1-((float)(data-base_min) / (float)delta_base);
-	if (distance_koef<stage2threshhold){ //STAGE 1.
-		return (invert == MAPNONINVERT)? range_max : range_min; //макс скорость если мы далеко от точки
-	}
-	else { // STAGE 2. снижаем скорость, если близко к точке
-		if (distance_koef < (float)PWMSTOPTHRESHOLD) return (invert == MAPNONINVERT)? range_min : range_max; //если мы очень близко к точке, то скорость нулевая
-		float st2_distance_koef = 1 - ((distance_koef-stage2threshhold)/(1-stage2threshhold));
-		float t =  st2_distance_koef * (float)delta_range;
-		return (invert == MAPNONINVERT)? range_min + (uint32_t)t : range_max - (uint32_t)t; 
-	}
-}
-
 /* Коэффициент заполнения умножается на saturation_coef, но не может быть больше 1 */
 uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert){
 	if ((range_min>range_max) || (base_min>base_max) || (data<base_min)) return 0;
 	uint32_t delta_range = range_max-range_min;
 	uint32_t delta_base = base_max - base_min;
 	uint32_t data_prived = data - base_min;
-	float coef_zapoln = 1 - ((float)data_prived/(float)delta_base);
+	float coef_zapoln = ((float)data_prived/(float)delta_base);
 	if (coef_zapoln<(float)PWMSTOPTHRESHOLD) return (invert == MAPNONINVERT)? range_min : range_max; //зона нечувствительности
 	coef_zapoln = coef_zapoln * saturation_coef;
 	if (coef_zapoln>1) coef_zapoln = 1;
@@ -231,8 +200,7 @@ void control_loop(void){
 }
 
 void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
-//	uint32_t mapped_ccr = map_PWM(PWMpower, 0, ADC_MAX, 0, T1MAX, PWM_SATURATION_COEFFICIENT, MAPINVERT);
-	uint32_t mapped_ccr = map_corrected_PWM(PWMpower, 0, ADC_MAX, 0, T1MAX, MAPINVERT, (float)PWMSTAGE2THRESHOLD);
+	uint32_t mapped_ccr = map_PWM(PWMpower, 0, ADC_MAX, 0, T1MAX, PWM_SATURATION_COEFFICIENT, MAPINVERT);
 //	//несимметричный	
 	switch (direction){
 		case PWMFORWARD:
@@ -255,7 +223,6 @@ int main(){
 	
 	
 	while (1){	
-//		control_loop();
-		
+//		control_loop();	
 	}
 }
