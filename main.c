@@ -19,6 +19,16 @@ void init_CPU(){
 	MDR_RST_CLK->CPU_CLOCK=0x00000106; // меняем мультиплексор с2 на PLLCPU
 }
 
+//void init_CPU(){
+//    RST_CLK_HSEconfig(RST_CLK_HSE_ON);/* Enable HSE */
+//    if (RST_CLK_HSEstatus() != SUCCESS)while (1);   
+//    RST_CLK_CPU_PLLconfig(RST_CLK_CPU_PLLsrcHSEdiv1, RST_CLK_CPU_PLLmul10);/* CPU_C1_SEL = HSE */
+//    RST_CLK_CPU_PLLcmd(ENABLE);
+//    if (RST_CLK_CPU_PLLstatus() != SUCCESS) while (1); 
+//    RST_CLK_CPUclkPrescaler(RST_CLK_CPUclkDIV1);/* CPU_C3_SEL = CPU_C2_SEL */ 
+//    RST_CLK_CPU_PLLuse(ENABLE);/* CPU_C2_SEL = PLL */ 
+//    RST_CLK_CPUclkSelection(RST_CLK_CPUclkCPU_C3); /* HCLK_SEL = CPU_C3_SEL */
+//}
 
 void init_GPIO(){
 	PORT_InitTypeDef GPIO_user_init;
@@ -215,13 +225,13 @@ void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
 
 int main(){
 	init_CPU();
+	init_USB();
   init_PER();
 	init_GPIO();
 	init_ADC();
 	init_TIMER1();
 	init_TIMER2();
-	
-	
+
 	while (1){	
 //		control_loop();	
 	}
