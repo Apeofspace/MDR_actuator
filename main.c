@@ -123,7 +123,7 @@ void init_ADC(void){
 	
 	ADCx_InitStruct.ADC_SamplingMode = ADC_SAMPLING_MODE_SINGLE_CONV;/* режим многократного преобразования */
 	ADCx_InitStruct.ADC_ChannelNumber = ADC_COM_CHANNEL;/* выбор номера канала */
-	ADCx_InitStruct.ADC_Prescaler = ADC_CLK_div_64; //выбор делителя тактовой частоты
+	ADCx_InitStruct.ADC_Prescaler = ADC_CLK_div_128; //выбор делителя тактовой частоты
   ADCx_InitStruct.ADC_DelayGo = 0x7;/* Дополнительная задержка перед началом преобразования после выбора канала (sequential mode) */
 	
 	ADC_Init(&ADC_InitStruct);

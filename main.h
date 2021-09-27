@@ -11,11 +11,11 @@
 #define T1MAX 99
 #define T2PSG 79
 #define T2ARR 499
-#define DEADTIMECONST 80  //ѕри 80м√ц 1 = 0.125 *10^-6 с (при DTG от CPU_CLK) 8 бит
+#define DEADTIMECONST 80  //ѕри 80м√ц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит
 #define ADC_MAX 0xfff
 #define FILTER_SIZE 6UL
-#define PWMSTOPTHRESHOLD 0.01  //зона нечувстсвительности
-#define PWM_SATURATION_COEFFICIENT 6
+#define PWMSTOPTHRESHOLD 0.005  //зона нечувстсвительности
+#define PWM_SATURATION_COEFFICIENT 10
 
 extern uint32_t T1CCR;
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
