@@ -15,19 +15,17 @@
 #define T2ARR 499
 #define DEADTIMECONST 80  //ѕри 80м√ц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит
 #define ADC_MAX 0xfff
+#define ADC_MASK 0xFFC
 #define FILTER_SIZE 6UL
 #define PWMSTOPTHRESHOLD 0.0025  //зона нечувстсвительности
 #define PWM_SATURATION_COEFFICIENT 10
 
+extern uint16_t com_angle;
+extern uint16_t obj_angle;
 extern uint32_t T1CCR;
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
 typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
 typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
-
-extern USB_Clock_TypeDef USB_Clock_InitStruct;
-extern USB_DeviceBUSParam_TypeDef USB_DeviceBUSParam;
-extern USB_CDC_LineCoding_TypeDef LineCoding;
-#define USB_BUFFER_LENGTH 100
 
 /*Inits*/
 void init_CPU(void);
@@ -39,7 +37,7 @@ void init_TIMER2(void);
 void deinit_all_GPIO(void);
 void deinit_TIMER(MDR_TIMER_TypeDef *Timer);
 void init_ADC(void);
-void VCom_Configuration(void);
+
 
 /*Functions*/
 uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert);

@@ -1,6 +1,9 @@
 #include "main.h"
 
 uint32_t T1CCR = 65;
+uint16_t com_angle = 2000;
+uint16_t obj_angle = 0;
+
 void deinit_all_GPIO(void){
 	PORT_DeInit(MDR_PORTA);
 	PORT_DeInit(MDR_PORTB);
@@ -18,17 +21,6 @@ void init_CPU(){
 	while ((MDR_RST_CLK->CLOCK_STATUS & RST_CLK_CLOCK_STATUS_PLL_CPU_RDY) != RST_CLK_CLOCK_STATUS_PLL_CPU_RDY);// ∆дЄм PLL_CPU
 	MDR_RST_CLK->CPU_CLOCK=0x00000106; // мен€ем мультиплексор с2 на PLLCPU
 }
-
-//void init_CPU(){
-//    RST_CLK_HSEconfig(RST_CLK_HSE_ON);/* Enable HSE */
-//    if (RST_CLK_HSEstatus() != SUCCESS)while (1);   
-//    RST_CLK_CPU_PLLconfig(RST_CLK_CPU_PLLsrcHSEdiv1, RST_CLK_CPU_PLLmul10);/* CPU_C1_SEL = HSE */
-//    RST_CLK_CPU_PLLcmd(ENABLE);
-//    if (RST_CLK_CPU_PLLstatus() != SUCCESS) while (1); 
-//    RST_CLK_CPUclkPrescaler(RST_CLK_CPUclkDIV1);/* CPU_C3_SEL = CPU_C2_SEL */ 
-//    RST_CLK_CPU_PLLuse(ENABLE);/* CPU_C2_SEL = PLL */ 
-//    RST_CLK_CPUclkSelection(RST_CLK_CPUclkCPU_C3); /* HCLK_SEL = CPU_C3_SEL */
-//}
 
 void init_GPIO(){
 	PORT_InitTypeDef GPIO_user_init;
@@ -48,7 +40,7 @@ void init_GPIO(){
 	PORT_Init(PWM_PORT, &GPIO_user_init);
 	
 	//ADC1
-	GPIO_user_init.PORT_Pin       = (ADC_COM_PIN | ADC_OBJ_PIN);
+	GPIO_user_init.PORT_Pin       = (ADC_OBJ_PIN);
 	GPIO_user_init.PORT_OE        = PORT_OE_IN;
 	GPIO_user_init.PORT_PULL_UP   = PORT_PULL_UP_OFF;
 	GPIO_user_init.PORT_PULL_DOWN = PORT_PULL_DOWN_OFF;
@@ -153,26 +145,21 @@ void init_PER(void){
 }
 
 uint16_t get_COM_angle(void){
-	ADC1_SetChannel(ADC_COM_CHANNEL);
-	ADC1_Start();
-	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
-	return filter_analog(ADC1_GetResult()&0xFFC, COM);
-//	return ADC1_GetResult()&ADC_MAX; //no filter
+	return com_angle;
 }
 
 uint16_t get_OBJ_angle(void){
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
 	ADC1_Start();
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
-	return filter_analog(ADC1_GetResult()&0xFFC, OBJ);
-//	return ADC1_GetResult()&ADC_MAX; //no filter
+	return filter_analog(ADC1_GetResult()&ADC_MASK, OBJ);
 }
 
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 	static uint16_t filter[FILTER_SIZE][2];
 	static uint8_t filter_count = 0;
 	uint16_t sum = 0; //должно хватить: 4 бита впереди свободные. значит можно просуммировать до 16 значений
-	filter[filter_count][channel] = data; 
+	filter[filter_count][channel] = data;
 	filter_count++;
 	if (filter_count >= FILTER_SIZE) filter_count = 0;
 	for (uint8_t i = 0; i < FILTER_SIZE; i++) sum += filter[i][channel]; 
@@ -196,6 +183,9 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 void control_loop(void){
 	uint16_t COM_angle = get_COM_angle();
 	uint16_t OBJ_angle = get_OBJ_angle();
+	
+	obj_angle = OBJ_angle;
+	USB_CDC_SendData(&obj_angle, 2);
 	
 	//чтобы не вставал в край
 	if (COM_angle<0x100) COM_angle = 0x100;
