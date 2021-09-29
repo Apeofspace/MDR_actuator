@@ -2,7 +2,6 @@
 
 uint32_t T1CCR = 65;
 uint16_t com_angle = 2000;
-uint16_t obj_angle = 0;
 
 void deinit_all_GPIO(void){
 	PORT_DeInit(MDR_PORTA);
@@ -184,8 +183,7 @@ void control_loop(void){
 	uint16_t COM_angle = get_COM_angle();
 	uint16_t OBJ_angle = get_OBJ_angle();
 	
-	obj_angle = OBJ_angle;
-	USB_CDC_SendData(&obj_angle, 2);
+	USB_CDC_SendData(&OBJ_angle, 2);
 	
 	//чтобы не вставал в край
 	if (COM_angle<0x100) COM_angle = 0x100;
