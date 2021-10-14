@@ -70,8 +70,5 @@ USB_Result USB_CDC_RecieveData(uint8_t* Buffer, uint32_t Length){
 		Buffer++;
 	}
 	com_angle = res;
-//	res = *Buffer;
-//	for (uint32_t i = 0; i<Length; i++) {res += *Buffer; Buffer++;}
-//	USB_CDC_SendData(res, 2);
 	return USB_SUCCESS;
 }

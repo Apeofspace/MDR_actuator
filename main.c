@@ -2,6 +2,10 @@
 
 uint32_t T1CCR = 65;
 uint16_t com_angle = 2000;
+uint32_t timestamp_command_recieved = 0;
+uint32_t timestamp_obj_recieved = 0;
+uint8_t timestamp_overflow_counter = 0;
+volatile uint32_t data_to_send[4];
 
 void deinit_all_GPIO(void){
 	PORT_DeInit(MDR_PORTA);
@@ -77,7 +81,7 @@ void init_TIMER1(){
 	
 	/*Настройки таймера*/
 	MDR_TIMER1->PSG = T1PSG; // Предделитель частоты
-	MDR_TIMER1->ARR = T1MAX; // Основание счета (16 бит)
+	MDR_TIMER1->ARR = T1ARR; // Основание счета (16 бит)
 	MDR_TIMER1->CNTRL = TIMER_CNTRL_ARRB_EN; //буферизация 
 	
 	/*Настройка каналов*/
@@ -85,13 +89,13 @@ void init_TIMER1(){
   MDR_TIMER1->CH1_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos)| //выход всегда вкл., 2 на выход REF, 3 на выход DTG
 													 (1 << TIMER_CH_CNTRL1_NSELOE_Pos )|(3 << TIMER_CH_CNTRL1_NSELO_Pos);
 	MDR_TIMER1->CH1_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
-	MDR_TIMER1->CCR1 = T1MAX;	
+	MDR_TIMER1->CCR1 = T1ARR;	
 	
 	MDR_TIMER1->CH2_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos);
   MDR_TIMER1->CH2_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos)| //выход всегда вкл., 2 на выход REF, 3 на выход DTG
 													 (1 << TIMER_CH_CNTRL1_NSELOE_Pos )|(3 << TIMER_CH_CNTRL1_NSELO_Pos);
 	MDR_TIMER1->CH2_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
-	MDR_TIMER1->CCR2 = T1MAX;	
+	MDR_TIMER1->CCR2 = T1ARR;	
 	
 	/*Разрешения работы*/
 	MDR_TIMER1->CNTRL |= TIMER_CNTRL_CNT_EN; // Счет вверх по TIM_CLK, и включить таймер.	
@@ -124,7 +128,7 @@ void init_ADC(void){
 	
 	ADCx_InitStruct.ADC_SamplingMode = ADC_SAMPLING_MODE_SINGLE_CONV;/* режим многократного преобразования */
 	ADCx_InitStruct.ADC_ChannelNumber = ADC_COM_CHANNEL;/* выбор номера канала */
-	ADCx_InitStruct.ADC_Prescaler = ADC_CLK_div_128; //выбор делителя тактовой частоты
+	ADCx_InitStruct.ADC_Prescaler = ADC_CLK_div_256; //выбор делителя тактовой частоты
   ADCx_InitStruct.ADC_DelayGo = 0x7;/* Дополнительная задержка перед началом преобразования после выбора канала (sequential mode) */
 	
 	ADC_Init(&ADC_InitStruct);
@@ -172,22 +176,27 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 	uint32_t delta_base = base_max - base_min;
 	uint32_t data_prived = data - base_min;
 	float coef_zapoln = ((float)data_prived/(float)delta_base);
-	if (coef_zapoln<(float)PWMSTOPTHRESHOLD) return (invert == MAPNONINVERT)? range_min : range_max; //зона нечувствительности
+	if (coef_zapoln<(float)PWMDEADZONE) return (invert == MAPNONINVERT)? range_min : range_max; //зона нечувствительности
 	coef_zapoln = coef_zapoln * saturation_coef;
 	if (coef_zapoln>1) coef_zapoln = 1;
 	return (invert == MAPNONINVERT)? range_min + (uint32_t)(coef_zapoln*(float)delta_range) : range_max - (uint32_t)(coef_zapoln*(float)delta_range);
 }
 
-
 void control_loop(void){
 	uint16_t COM_angle = get_COM_angle();
+	take_timestamp(&timestamp_command_recieved);
 	uint16_t OBJ_angle = get_OBJ_angle();
+	take_timestamp(&timestamp_obj_recieved);
+
+	reload_SysTick();
+	data_to_send[0] = timestamp_command_recieved;
+	data_to_send[1] = timestamp_obj_recieved;
+	data_to_send[2] = COM_angle;
+	data_to_send[3] = OBJ_angle;
+	send_data();
 	
-	USB_CDC_SendData(&OBJ_angle, 2);
-	
-	//чтобы не вставал в край
-	if (COM_angle<0x100) COM_angle = 0x100;
-	if (COM_angle>0xDFC) COM_angle = 0xDFC;
+	if (COM_angle<COM_LIMIT_LEFT) COM_angle = COM_LIMIT_LEFT;
+	if (COM_angle>COM_LIMIT_RIGHT) COM_angle = COM_LIMIT_RIGHT;
 
  	if (COM_angle>=OBJ_angle){		
 		changePWM(PWMFORWARD, COM_angle-OBJ_angle);		
@@ -198,17 +207,40 @@ void control_loop(void){
 }
 
 void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
-	uint32_t mapped_ccr = map_PWM(PWMpower, 0, ADC_MAX, 0, T1MAX, PWM_SATURATION_COEFFICIENT, MAPINVERT);
+	uint32_t mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
 //	//несимметричный	
 	switch (direction){
 		case PWMFORWARD:
 			MDR_TIMER1->CCR1 = mapped_ccr;
-			MDR_TIMER1->CCR2 = T1MAX; //выключен
+			MDR_TIMER1->CCR2 = T1ARR; //выключен
 			break;		
 		case PWMBACKWARD:
-			MDR_TIMER1->CCR1 = T1MAX; //выключен
+			MDR_TIMER1->CCR1 = T1ARR; //выключен
 			MDR_TIMER1->CCR2 = mapped_ccr;
 	}
+}
+
+void init_SysTick(){
+	SysTick->LOAD = 0x00FFFFFF; 
+	SysTick->CTRL = 0;
+	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk |SysTick_CTRL_TICKINT_Msk; //HCLK and Enable and interrupt enable
+	NVIC_EnableIRQ(SysTick_IRQn);
+}
+
+void reload_SysTick(){
+	SysTick->VAL = 1; //запись любого значения очищает регистр в 0, а также очищает COUNTFLAG в SysTick->CTRL
+	timestamp_overflow_counter = 0;
+}
+
+void take_timestamp(uint32_t* timestamp){
+	//возможно перевод в микросекунды это не целесообразно, т.к. в миландре нет FPU, проверить по ассемблеру
+	*timestamp += SysTick_to_US(0x00FFFFFF-SysTick->VAL);
+	if (timestamp_overflow_counter>0) *timestamp += timestamp_overflow_counter * SysTick_to_US(0x00FFFFFF);
+}
+
+void send_data(){
+	//Отправляются данные о принятом сигнале и моменте принятия сигнала, о снятом сигнале с объекта управления и времени снятия сигнала
+	USB_CDC_SendData(&data_to_send, 16);
 }
 
 int main(){
@@ -217,6 +249,7 @@ int main(){
   init_PER();
 	init_GPIO();
 	init_ADC();
+	init_SysTick();
 	init_TIMER1();
 	init_TIMER2();
 

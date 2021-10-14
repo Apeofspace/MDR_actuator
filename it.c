@@ -6,3 +6,6 @@ void Timer2_IRQHandler(void){
 	control_loop();
 }
 
+void SysTick_Handler(void){
+	timestamp_overflow_counter ++;
+}
