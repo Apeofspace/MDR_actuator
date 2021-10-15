@@ -185,10 +185,13 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 void control_loop(void){
 	uint16_t COM_angle = get_COM_angle();
 	take_timestamp(&timestamp_command_recieved);
+	timestamp_obj_recieved = timestamp_command_recieved;
+	reload_SysTick();
+	
 	uint16_t OBJ_angle = get_OBJ_angle();
 	take_timestamp(&timestamp_obj_recieved);
-
 	reload_SysTick();
+	
 	data_to_send[0] = timestamp_command_recieved;
 	data_to_send[1] = timestamp_obj_recieved;
 	data_to_send[2] = COM_angle;
@@ -233,9 +236,11 @@ void reload_SysTick(){
 }
 
 void take_timestamp(uint32_t* timestamp){
-	//возможно перевод в микросекунды это не целесообразно, т.к. в миландре нет FPU, проверить по ассемблеру
-	*timestamp += SysTick_to_US(0x00FFFFFF-SysTick->VAL);
-	if (timestamp_overflow_counter>0) *timestamp += timestamp_overflow_counter * SysTick_to_US(0x00FFFFFF);
+	//возможно перевод в микросекунды это не целесообразно, т.к. в миландре нет FPU
+//	*timestamp += SysTick_to_US(0x00FFFFFF-SysTick->VAL);
+//	if (timestamp_overflow_counter>0) *timestamp += timestamp_overflow_counter * SysTick_to_US(0x00FFFFFF);
+	*timestamp +=0x00FFFFFF-SysTick->VAL;
+	if (timestamp_overflow_counter>0) *timestamp += timestamp_overflow_counter * 0x00FFFFFF;
 }
 
 void send_data(){
