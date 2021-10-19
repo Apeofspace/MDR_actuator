@@ -2,10 +2,10 @@
 
 uint32_t T1CCR = 65;
 uint16_t com_angle = 2000;
-uint32_t timestamp_command_recieved = 0;
-uint32_t timestamp_obj_recieved = 0;
+uint64_t timestamp_command_recieved = 0;
+uint64_t timestamp_obj_recieved = 0;
 uint8_t timestamp_overflow_counter = 0;
-volatile uint32_t data_to_send[4];
+volatile uint32_t data_to_send[5];
 
 void deinit_all_GPIO(void){
 	PORT_DeInit(MDR_PORTA);
@@ -192,10 +192,16 @@ void control_loop(void){
 	take_timestamp(&timestamp_obj_recieved);
 	reload_SysTick();
 	
-	data_to_send[0] = timestamp_command_recieved;
-	data_to_send[1] = timestamp_obj_recieved;
-	data_to_send[2] = COM_angle;
-	data_to_send[3] = OBJ_angle;
+//	data_to_send[0] = timestamp_command_recieved;
+//	data_to_send[1] = timestamp_obj_recieved;
+//	data_to_send[2] = COM_angle;
+//	data_to_send[3] = OBJ_angle;
+	
+	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
+	data_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
+	data_to_send[1] = (timestamp_command_recieved&0xFFFFFFFF);
+	data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
+	data_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
 	send_data();
 	
 	if (COM_angle<COM_LIMIT_LEFT) COM_angle = COM_LIMIT_LEFT;
@@ -235,7 +241,7 @@ void reload_SysTick(){
 	timestamp_overflow_counter = 0;
 }
 
-void take_timestamp(uint32_t* timestamp){
+void take_timestamp(uint64_t* timestamp){
 	//возможно перевод в микросекунды это не целесообразно, т.к. в миландре нет FPU
 //	*timestamp += SysTick_to_US(0x00FFFFFF-SysTick->VAL);
 //	if (timestamp_overflow_counter>0) *timestamp += timestamp_overflow_counter * SysTick_to_US(0x00FFFFFF);
@@ -245,7 +251,7 @@ void take_timestamp(uint32_t* timestamp){
 
 void send_data(){
 	//ќтправл€ютс€ данные о прин€том сигнале и моменте прин€ти€ сигнала, о сн€том сигнале с объекта управлени€ и времени сн€ти€ сигнала
-	USB_CDC_SendData(&data_to_send, 16);
+	USB_CDC_SendData(&data_to_send, 20);
 }
 
 int main(){

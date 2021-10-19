@@ -170,6 +170,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>s,0x0A</ItemText>
         </Ww>
+        <Ww>
+          <count>4</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>data_to_send,0x10</ItemText>
+        </Ww>
       </WatchWindow1>
       <Tracepoint>
         <THDelay>0</THDelay>

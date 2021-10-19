@@ -66,7 +66,7 @@ USB_Result USB_CDC_RecieveData(uint8_t* Buffer, uint32_t Length){
 	uint16_t r = 0;
 	for (uint32_t i = 0; i<Length; i++){
 		r = *Buffer - '0';
-		res = res*10 + r;
+		res = res*10 + r;  //превратить ASCII в uint
 		Buffer++;
 	}
 	com_angle = res;

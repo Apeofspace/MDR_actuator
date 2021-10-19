@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\Objects\drivecontrol.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\drivecontrol.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Fri Oct 15 13:51:09 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Tue Oct 19 14:02:48 2021
 <BR><P>
 <H3>Maximum Stack Usage =        196 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -822,7 +822,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[3a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;control_loop
 </UL>
 
-<P><STRONG><a name="[3a]"></a>control_loop</STRONG> (Thumb, 216 bytes, Stack size 24 bytes, main.o(.text.control_loop))
+<P><STRONG><a name="[3a]"></a>control_loop</STRONG> (Thumb, 230 bytes, Stack size 24 bytes, main.o(.text.control_loop))
 <BR><BR>[Stack]<UL><LI>Max Depth = 164<LI>Call Chain = control_loop &rArr; send_data &rArr; USB_CDC_SendData &rArr; USB_EP_doDataIn &rArr; USB_EP_sendInDataPortion &rArr; USB_EP_SetReady &rArr; USB_SetSEPxCTRL
 </UL>
 <BR>[Calls]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;take_timestamp
@@ -986,7 +986,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[3a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;control_loop
 </UL>
 
-<P><STRONG><a name="[69]"></a>take_timestamp</STRONG> (Thumb, 72 bytes, Stack size 4 bytes, main.o(.text.take_timestamp))
+<P><STRONG><a name="[69]"></a>take_timestamp</STRONG> (Thumb, 88 bytes, Stack size 4 bytes, main.o(.text.take_timestamp))
 <BR><BR>[Stack]<UL><LI>Max Depth = 4<LI>Call Chain = take_timestamp
 </UL>
 <BR>[Called By]<UL><LI><a href="#[3a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;control_loop
