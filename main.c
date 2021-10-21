@@ -192,11 +192,6 @@ void control_loop(void){
 	take_timestamp(&timestamp_obj_recieved);
 	reload_SysTick();
 	
-//	data_to_send[0] = timestamp_command_recieved;
-//	data_to_send[1] = timestamp_obj_recieved;
-//	data_to_send[2] = COM_angle;
-//	data_to_send[3] = OBJ_angle;
-	
 	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
 	data_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
 	data_to_send[1] = (timestamp_command_recieved&0xFFFFFFFF);
@@ -242,9 +237,6 @@ void reload_SysTick(){
 }
 
 void take_timestamp(uint64_t* timestamp){
-	//возможно перевод в микросекунды это не целесообразно, т.к. в миландре нет FPU
-//	*timestamp += SysTick_to_US(0x00FFFFFF-SysTick->VAL);
-//	if (timestamp_overflow_counter>0) *timestamp += timestamp_overflow_counter * SysTick_to_US(0x00FFFFFF);
 	*timestamp +=0x00FFFFFF-SysTick->VAL;
 	if (timestamp_overflow_counter>0) *timestamp += timestamp_overflow_counter * 0x00FFFFFF;
 }
