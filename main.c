@@ -127,11 +127,11 @@ void init_ADC(void){
   ADC_StructInit(&ADC_InitStruct);
   ADCx_StructInit(&ADCx_InitStruct);
 	
-	ADC_InitStruct.ADC_StartDelay = 0x05;
+//	ADC_InitStruct.ADC_StartDelay = 0x05;
 	
 	ADCx_InitStruct.ADC_SamplingMode = ADC_SAMPLING_MODE_SINGLE_CONV;/* режим многократного преобразования */
 	ADCx_InitStruct.ADC_ChannelNumber = ADC_OBJ_CHANNEL;/* выбор номера канала */
-	ADCx_InitStruct.ADC_Prescaler = ADC_CLK_div_128; //выбор делителя тактовой частоты
+	ADCx_InitStruct.ADC_Prescaler = ADC_CLK_div_64; //выбор делителя тактовой частоты
   ADCx_InitStruct.ADC_DelayGo = 0x7;/* Дополнительная задержка перед началом преобразования после выбора канала (sequential mode) */
 	
 	ADC_Init(&ADC_InitStruct);
@@ -159,18 +159,18 @@ uint16_t get_OBJ_angle(void){
 	PORT_SetBits(MDR_PORTC,PORT_Pin_1);
 	uint32_t sum = 0;
 	completedIRQ = 0;
-	// Restart DMA
+		// Restart DMA
 	DMA_ControlTable[DMA_Channel_ADC1].DMA_Control = dmaCtrlStart;
 	DMA_Cmd(DMA_Channel_ADC1, ENABLE);	
 	BRD_ADC1_RunSample(1);
-	while(!completedIRQ){};
-	for (uint32_t i = 0; i < FILTER_SIZE; i++) sum += data_dma[i]; 
-	uint32_t res = sum/FILTER_SIZE;
-	return (sum/FILTER_SIZE);
+//	while(!completedIRQ){};
+	for (uint32_t i = 0; i < FILTER_SIZE; i++) sum += data_dma[i]&ADC_MASK; 
+	return sum/FILTER_SIZE;
 }
 	#elif defined (USE_BASIC_FILTER)
 		//run ADC
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
+	BRD_ADC1_RunSample(0);
 	ADC1_Start();
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
 	return filter_analog(ADC1_GetResult()&ADC_MASK, OBJ);

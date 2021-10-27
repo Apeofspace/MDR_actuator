@@ -12,17 +12,17 @@
 /*Все изменяемые параметры*/
 //Только один тип фильтрации можно выбрать
 #define USE_DMA_FILTER
-//#define USE_NO_FILTER
 //#define USE_BASIC_FILTER
+//#define USE_NO_FILTER
+#define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
+#define FILTER_SIZE 30UL
 #define T1PSG 79
 #define T1ARR 99
 #define T2PSG 79
 #define T2ARR 999
 #define DEADTIMECONST 80  //При 80мГц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
-#define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
-#define FILTER_SIZE 5UL
 #define PWMDEADZONE 0.0015  //зона нечувстсвительности
-#define PWM_SATURATION_COEFFICIENT 10 //коэффициент умножения коэффициента заполнения
+#define PWM_SATURATION_COEFFICIENT 12 //коэффициент умножения коэффициента заполнения
 #define COM_LIMIT_LEFT 0x100 //чтобы не перекатывалось через ноль
 #define COM_LIMIT_RIGHT 0xEFF
 

@@ -17,6 +17,7 @@ void DMA_IRQHandler(void)
   BRD_ADC1_RunSingle(0);
   //  Вычитываем данные, чтобы снять запрос sreq к DMA  
   ADC1_GetResult();
+	DMA_Cmd(DMA_Channel_ADC1, DISABLE);	//необязательно?
   
   completedIRQ = 1;
   PORT_ResetBits(MDR_PORTC,PORT_Pin_1);
