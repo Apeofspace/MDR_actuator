@@ -6,6 +6,9 @@ uint64_t timestamp_command_recieved = 0;
 uint64_t timestamp_obj_recieved = 0;
 uint8_t timestamp_overflow_counter = 0;
 volatile uint32_t data_to_send[5];
+uint32_t completedIRQ;
+uint32_t dmaCtrlStart;
+uint16_t data_dma[FILTER_SIZE];
 
 void deinit_all_GPIO(void){
 	PORT_DeInit(MDR_PORTA);
@@ -127,8 +130,8 @@ void init_ADC(void){
 	ADC_InitStruct.ADC_StartDelay = 0x05;
 	
 	ADCx_InitStruct.ADC_SamplingMode = ADC_SAMPLING_MODE_SINGLE_CONV;/* режим многократного преобразовани€ */
-	ADCx_InitStruct.ADC_ChannelNumber = ADC_COM_CHANNEL;/* выбор номера канала */
-	ADCx_InitStruct.ADC_Prescaler = ADC_CLK_div_256; //выбор делител€ тактовой частоты
+	ADCx_InitStruct.ADC_ChannelNumber = ADC_OBJ_CHANNEL;/* выбор номера канала */
+	ADCx_InitStruct.ADC_Prescaler = ADC_CLK_div_128; //выбор делител€ тактовой частоты
   ADCx_InitStruct.ADC_DelayGo = 0x7;/* ƒополнительна€ задержка перед началом преобразовани€ после выбора канала (sequential mode) */
 	
 	ADC_Init(&ADC_InitStruct);
@@ -152,10 +155,26 @@ uint16_t get_COM_angle(void){
 }
 
 uint16_t get_OBJ_angle(void){
+	#if defined (USE_DMA_FILTER)
+	PORT_SetBits(MDR_PORTC,PORT_Pin_1);
+	uint32_t sum = 0;
+	completedIRQ = 0;
+	// Restart DMA
+	DMA_ControlTable[DMA_Channel_ADC1].DMA_Control = dmaCtrlStart;
+	DMA_Cmd(DMA_Channel_ADC1, ENABLE);	
+	BRD_ADC1_RunSample(1);
+	while(!completedIRQ){};
+	for (uint32_t i = 0; i < FILTER_SIZE; i++) sum += data_dma[i]; 
+	uint32_t res = sum/FILTER_SIZE;
+	return (sum/FILTER_SIZE);
+}
+	#elif defined (USE_BASIC_FILTER)
+		//run ADC
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
 	ADC1_Start();
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
 	return filter_analog(ADC1_GetResult()&ADC_MASK, OBJ);
+	
 }
 
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
@@ -168,6 +187,15 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 	for (uint8_t i = 0; i < FILTER_SIZE; i++) sum += filter[i][channel]; 
 	return(sum/FILTER_SIZE);	
 }
+
+	#elif defined (USE_NO_FILTER)
+	//run ADC
+	ADC1_SetChannel(ADC_OBJ_CHANNEL);
+	ADC1_Start();
+	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
+	return ADC1_GetResult();
+}
+#endif
 
 /*  оэффициент заполнени€ умножаетс€ на saturation_coef, но не может быть больше 1 */
 uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert){
@@ -183,13 +211,13 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 }
 
 void control_loop(void){
-	uint16_t COM_angle = get_COM_angle();
-	take_timestamp(&timestamp_command_recieved);
-	timestamp_obj_recieved = timestamp_command_recieved;
-	reload_SysTick();
-	
 	uint16_t OBJ_angle = get_OBJ_angle();
 	take_timestamp(&timestamp_obj_recieved);
+	timestamp_command_recieved = timestamp_obj_recieved;
+	reload_SysTick();
+	
+	uint16_t COM_angle = get_COM_angle();
+	take_timestamp(&timestamp_command_recieved);
 	reload_SysTick();
 	
 	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
@@ -251,12 +279,13 @@ int main(){
 	init_USB();
   init_PER();
 	init_GPIO();
+	#ifdef USE_DMA_FILTER
+	init_DMA();
+	#endif
 	init_ADC();
 	init_SysTick();
 	init_TIMER1();
 	init_TIMER2();
 
-	while (1){	
-//		control_loop();	
-	}
+	while (1){}
 }

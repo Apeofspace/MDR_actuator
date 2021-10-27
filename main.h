@@ -7,8 +7,13 @@
 #include "ports.h"
 #include "MDR32F9Qx_usb_handlers.h"
 #include "MDR32F9Qx_usb_CDC.h"
+#include "MDR32F9Qx_dma.h"
 
 /*Все изменяемые параметры*/
+//Только один тип фильтрации можно выбрать
+#define USE_DMA_FILTER
+//#define USE_NO_FILTER
+//#define USE_BASIC_FILTER
 #define T1PSG 79
 #define T1ARR 99
 #define T2PSG 79
@@ -17,13 +22,15 @@
 #define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
 #define FILTER_SIZE 5UL
 #define PWMDEADZONE 0.0015  //зона нечувстсвительности
-#define PWM_SATURATION_COEFFICIENT 12 //коэффициент умножения коэффициента заполнения
+#define PWM_SATURATION_COEFFICIENT 10 //коэффициент умножения коэффициента заполнения
 #define COM_LIMIT_LEFT 0x100 //чтобы не перекатывалось через ноль
 #define COM_LIMIT_RIGHT 0xEFF
 
 ///*Макрос*/
 //#define SysTick_to_US(SysTick) ((double) SysTick *  1000000U/SystemCoreClock) 	
 
+extern uint32_t dmaCtrlStart;
+extern uint32_t completedIRQ;
 extern uint16_t com_angle;
 extern uint32_t T1CCR;
 extern uint64_t timestamp_command_recieved, timestamp_obj_recieved; //время, когда было получена команда, и время, когда была отработана команда
@@ -32,6 +39,10 @@ extern volatile uint32_t data_to_send[5];
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
 typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
 typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
+extern DMA_CtrlDataInitTypeDef DMA_DataCtrl_Pri;
+extern DMA_ChannelInitTypeDef DMA_ChanCtrl;
+extern uint16_t data_dma[FILTER_SIZE];
+extern DMA_CtrlDataTypeDef DMA_ControlTable[DMA_Channels_Number * (1 + DMA_AlternateData)];
 
 /*Inits*/
 void init_CPU(void);
@@ -44,6 +55,8 @@ void deinit_all_GPIO(void);
 void deinit_TIMER(MDR_TIMER_TypeDef *Timer);
 void init_ADC(void);
 void init_SysTick(void);
+void init_DMA(void);
+void init_LED(void);
 
 
 /*Functions*/
@@ -56,7 +69,11 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel);
 void take_timestamp(uint64_t* timestamp);
 void reload_SysTick(void);
 void send_data(void);
+void BRD_ADC1_RunSingle(uint32_t goEna);
+void BRD_ADC1_RunSample(uint32_t sampleEna);
 
 /*IRQs*/
 void Timer2_IRQHandler(void);
 void SysTick_Handler(void);
+void DMA_IRQHandler(void);
+	
