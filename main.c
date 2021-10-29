@@ -5,7 +5,7 @@ uint16_t com_angle = 2000;
 uint64_t timestamp_command_recieved = 0;
 uint64_t timestamp_obj_recieved = 0;
 uint8_t timestamp_overflow_counter = 0;
-volatile uint32_t data_to_send[5];
+volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
 uint32_t completedIRQ;
 uint32_t dmaCtrlStart;
 uint16_t data_dma[FILTER_SIZE];
@@ -203,7 +203,7 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 	uint32_t delta_range = range_max-range_min;
 	uint32_t delta_base = base_max - base_min;
 	uint32_t data_prived = data - base_min;
-	float coef_zapoln = ((float)data_prived/(float)delta_base);
+	float coef_zapoln = ((float)data_prived/(float)(delta_base+1));
 	if (coef_zapoln<(float)PWMDEADZONE) return (invert == MAPNONINVERT)? range_min : range_max; //зона нечувствительности
 	coef_zapoln = coef_zapoln * saturation_coef;
 	if (coef_zapoln>1) coef_zapoln = 1;
@@ -211,6 +211,8 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 }
 
 void control_loop(void){
+	uint16_t PWMpower;
+	uint32_t mapped_ccr;
 	uint16_t OBJ_angle = get_OBJ_angle();
 	take_timestamp(&timestamp_obj_recieved);
 	timestamp_command_recieved = timestamp_obj_recieved;
@@ -220,26 +222,37 @@ void control_loop(void){
 	take_timestamp(&timestamp_command_recieved);
 	reload_SysTick();
 	
-	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
-	data_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
-	data_to_send[1] = (timestamp_command_recieved&0xFFFFFFFF);
-	data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
-	data_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
-	send_data();
-	
 	if (COM_angle<COM_LIMIT_LEFT) COM_angle = COM_LIMIT_LEFT;
 	if (COM_angle>COM_LIMIT_RIGHT) COM_angle = COM_LIMIT_RIGHT;
+	
+//	if (OBJ_angle>COM_angle){
+//		PWMpower = OBJ_angle-COM_angle;
+//		mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
+//		changePWM(PWMBACKWARD, mapped_ccr);		
+//	}
+//	else{		
+//		PWMpower = COM_angle-OBJ_angle;
+//		mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
+//		changePWM(PWMFORWARD, mapped_ccr);		
+//	}
+//	
 
- 	if (COM_angle>=OBJ_angle){		
-		changePWM(PWMFORWARD, COM_angle-OBJ_angle);		
-	}
-	if (OBJ_angle>COM_angle){
-		changePWM(PWMBACKWARD, OBJ_angle-COM_angle);		
-	}
+	PWMpower = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;
+	PWM_DIRECTION direction = (OBJ_angle>COM_angle)? PWMBACKWARD : PWMFORWARD;
+	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
+	changePWM(direction, mapped_ccr);	
+	
+	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
+	data_to_send[1] = (timestamp_command_recieved&0xFFFFFFFF);
+	data_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
+	data_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
+	data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
+	data_to_send[5] = mapped_ccr;
+	send_data(24);
 }
 
-void changePWM(PWM_DIRECTION direction, uint16_t PWMpower){
-	uint32_t mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
+void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
+//	uint32_t mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
 //	//несимметричный	
 	switch (direction){
 		case PWMFORWARD:
@@ -269,9 +282,9 @@ void take_timestamp(uint64_t* timestamp){
 	if (timestamp_overflow_counter>0) *timestamp += timestamp_overflow_counter * 0x00FFFFFF;
 }
 
-void send_data(){
+void send_data(uint32_t Length){
 	//ќтправл€ютс€ данные о прин€том сигнале и моменте прин€ти€ сигнала, о сн€том сигнале с объекта управлени€ и времени сн€ти€ сигнала
-	USB_CDC_SendData(&data_to_send, 20);
+	USB_CDC_SendData(&data_to_send, Length);
 }
 
 int main(){

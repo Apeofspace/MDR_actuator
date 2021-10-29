@@ -16,8 +16,8 @@
 //#define USE_NO_FILTER
 #define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
 #define FILTER_SIZE 30UL
-#define T1PSG 79
-#define T1ARR 99
+#define T1PSG 19
+#define T1ARR 399
 #define T2PSG 79
 #define T2ARR 999
 #define DEADTIMECONST 80  //При 80мГц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
@@ -26,16 +26,15 @@
 #define COM_LIMIT_LEFT 0x100 //чтобы не перекатывалось через ноль
 #define COM_LIMIT_RIGHT 0xEFF
 
-///*Макрос*/
-//#define SysTick_to_US(SysTick) ((double) SysTick *  1000000U/SystemCoreClock) 	
-
+/*Переменные*/
+#define USB_DATA_BUFFER_SIZE 6
 extern uint32_t dmaCtrlStart;
 extern uint32_t completedIRQ;
 extern uint16_t com_angle;
 extern uint32_t T1CCR;
 extern uint64_t timestamp_command_recieved, timestamp_obj_recieved; //время, когда было получена команда, и время, когда была отработана команда
 extern uint8_t timestamp_overflow_counter;
-extern volatile uint32_t data_to_send[5];
+extern volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
 typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
 typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
@@ -61,14 +60,14 @@ void init_LED(void);
 
 /*Functions*/
 uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert);
-void changePWM(PWM_DIRECTION direction, uint16_t PWMpower);
+void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr);
 void control_loop(void);
 uint16_t get_OBJ_angle(void);
 uint16_t get_COM_angle(void);
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel);
 void take_timestamp(uint64_t* timestamp);
 void reload_SysTick(void);
-void send_data(void);
+void send_data(uint32_t Length);
 void BRD_ADC1_RunSingle(uint32_t goEna);
 void BRD_ADC1_RunSample(uint32_t sampleEna);
 
