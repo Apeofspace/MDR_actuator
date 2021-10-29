@@ -10,12 +10,12 @@
 #include "MDR32F9Qx_dma.h"
 
 /*Все изменяемые параметры*/
-//Только один тип фильтрации можно выбрать
 #define USE_DMA_FILTER
-//#define USE_BASIC_FILTER
+#define USE_BASIC_FILTER
 //#define USE_NO_FILTER
 #define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
-#define FILTER_SIZE 30UL
+#define DMA_FILTER_SIZE 30UL
+#define BASIC_FILTER_SIZE 4UL
 #define T1PSG 19
 #define T1ARR 399
 #define T2PSG 79
@@ -27,7 +27,7 @@
 #define COM_LIMIT_RIGHT 0xEFF
 
 /*Переменные*/
-#define USB_DATA_BUFFER_SIZE 6
+#define USB_DATA_BUFFER_SIZE 7
 extern uint32_t dmaCtrlStart;
 extern uint32_t completedIRQ;
 extern uint16_t com_angle;
@@ -40,7 +40,7 @@ typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
 typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
 extern DMA_CtrlDataInitTypeDef DMA_DataCtrl_Pri;
 extern DMA_ChannelInitTypeDef DMA_ChanCtrl;
-extern uint16_t data_dma[FILTER_SIZE];
+extern uint16_t data_dma[DMA_FILTER_SIZE];
 extern DMA_CtrlDataTypeDef DMA_ControlTable[DMA_Channels_Number * (1 + DMA_AlternateData)];
 
 /*Inits*/

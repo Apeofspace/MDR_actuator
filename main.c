@@ -8,7 +8,7 @@ uint8_t timestamp_overflow_counter = 0;
 volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
 uint32_t completedIRQ;
 uint32_t dmaCtrlStart;
-uint16_t data_dma[FILTER_SIZE];
+uint16_t data_dma[DMA_FILTER_SIZE];
 
 void deinit_all_GPIO(void){
 	PORT_DeInit(MDR_PORTA);
@@ -154,8 +154,27 @@ uint16_t get_COM_angle(void){
 	return com_angle;
 }
 
+uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
+	static uint16_t filter[BASIC_FILTER_SIZE][2];
+	static uint8_t filter_count = 0;
+	uint16_t sum = 0; //должно хватить: 4 бита впереди свободные. значит можно просуммировать до 16 значений
+	filter[filter_count][channel] = data;
+	filter_count++;
+	if (filter_count >= BASIC_FILTER_SIZE) filter_count = 0;
+	for (uint8_t i = 0; i < BASIC_FILTER_SIZE; i++) sum += filter[i][channel]; 
+	return(sum/BASIC_FILTER_SIZE);	
+}
+
 uint16_t get_OBJ_angle(void){
-	#if defined (USE_DMA_FILTER)
+	#if defined (USE_BASIC_FILTER)&&!defined(USE_DMA_FILTER)
+		//run ADC
+	ADC1_SetChannel(ADC_OBJ_CHANNEL);
+	BRD_ADC1_RunSample(0);
+	ADC1_Start();
+	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
+	return filter_analog(ADC1_GetResult()&ADC_MASK, OBJ);
+}
+	#elif defined (USE_DMA_FILTER)
 	PORT_SetBits(MDR_PORTC,PORT_Pin_1);
 	uint32_t sum = 0;
 	completedIRQ = 0;
@@ -164,33 +183,17 @@ uint16_t get_OBJ_angle(void){
 	DMA_Cmd(DMA_Channel_ADC1, ENABLE);	
 	BRD_ADC1_RunSample(1);
 //	while(!completedIRQ){};
-	for (uint32_t i = 0; i < FILTER_SIZE; i++) sum += data_dma[i]&ADC_MASK; 
-	return sum/FILTER_SIZE;
+	for (uint32_t i = 0; i < DMA_FILTER_SIZE; i++) sum += data_dma[i]&ADC_MASK; 
+	#if defined(USE_BASIC_FILTER)
+	return filter_analog(sum/DMA_FILTER_SIZE, OBJ);
+	#elif !defined(USE_BASIC_FILTER)
+	return sum/DMA_FILTER_SIZE;
+	#endif
 }
-	#elif defined (USE_BASIC_FILTER)
-		//run ADC
-	ADC1_SetChannel(ADC_OBJ_CHANNEL);
-	BRD_ADC1_RunSample(0);
-	ADC1_Start();
-	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
-	return filter_analog(ADC1_GetResult()&ADC_MASK, OBJ);
-	
-}
-
-uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
-	static uint16_t filter[FILTER_SIZE][2];
-	static uint8_t filter_count = 0;
-	uint16_t sum = 0; //должно хватить: 4 бита впереди свободные. значит можно просуммировать до 16 значений
-	filter[filter_count][channel] = data;
-	filter_count++;
-	if (filter_count >= FILTER_SIZE) filter_count = 0;
-	for (uint8_t i = 0; i < FILTER_SIZE; i++) sum += filter[i][channel]; 
-	return(sum/FILTER_SIZE);	
-}
-
 	#elif defined (USE_NO_FILTER)
 	//run ADC
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
+	BRD_ADC1_RunSample(0);
 	ADC1_Start();
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
 	return ADC1_GetResult();
@@ -224,18 +227,6 @@ void control_loop(void){
 	
 	if (COM_angle<COM_LIMIT_LEFT) COM_angle = COM_LIMIT_LEFT;
 	if (COM_angle>COM_LIMIT_RIGHT) COM_angle = COM_LIMIT_RIGHT;
-	
-//	if (OBJ_angle>COM_angle){
-//		PWMpower = OBJ_angle-COM_angle;
-//		mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
-//		changePWM(PWMBACKWARD, mapped_ccr);		
-//	}
-//	else{		
-//		PWMpower = COM_angle-OBJ_angle;
-//		mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
-//		changePWM(PWMFORWARD, mapped_ccr);		
-//	}
-//	
 
 	PWMpower = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;
 	PWM_DIRECTION direction = (OBJ_angle>COM_angle)? PWMBACKWARD : PWMFORWARD;
@@ -247,8 +238,9 @@ void control_loop(void){
 	data_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
 	data_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
 	data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
-	data_to_send[5] = mapped_ccr;
-	send_data(24);
+	data_to_send[5] = T1ARR - mapped_ccr;
+	data_to_send[6] = direction;
+	send_data(28);
 }
 
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){

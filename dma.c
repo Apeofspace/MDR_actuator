@@ -58,8 +58,7 @@ void init_DMA(){
   
   DMA_DataCtrl_Pri.DMA_SourceBaseAddr = (uint32_t)&MDR_ADC->ADC1_RESULT;
   DMA_DataCtrl_Pri.DMA_DestBaseAddr   = (uint32_t)&data_dma;
-  DMA_DataCtrl_Pri.DMA_CycleSize      = FILTER_SIZE;
-	
+  DMA_DataCtrl_Pri.DMA_CycleSize      = DMA_FILTER_SIZE;
 	DMA_Init(DMA_Channel_ADC1, &DMA_ChanCtrl);
   DMA_Cmd(DMA_Channel_ADC1, ENABLE);
 	
