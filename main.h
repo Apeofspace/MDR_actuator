@@ -15,8 +15,8 @@
 //#define USE_NO_FILTER
 #define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
 #define DMA_FILTER_SIZE 30UL
-#define BASIC_FILTER_SIZE 4UL
-#define T1PSG 19
+#define BASIC_FILTER_SIZE 7UL
+#define T1PSG 9
 #define T1ARR 399
 #define T2PSG 79
 #define T2ARR 999

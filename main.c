@@ -85,7 +85,7 @@ void init_TIMER1(){
 	/*Настройки таймера*/
 	MDR_TIMER1->PSG = T1PSG; // Предделитель частоты
 	MDR_TIMER1->ARR = T1ARR; // Основание счета (16 бит)
-	MDR_TIMER1->CNTRL = TIMER_CNTRL_ARRB_EN; //буферизация 
+	MDR_TIMER1->CNTRL = 0x00000042; //буферизация счет вверх и вниз
 	
 	/*Настройка каналов*/
 	MDR_TIMER1->CH1_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos); //формат сигнала 6: 1 если CNT<CCR
@@ -101,7 +101,7 @@ void init_TIMER1(){
 	MDR_TIMER1->CCR2 = T1ARR;	
 	
 	/*Разрешения работы*/
-	MDR_TIMER1->CNTRL |= TIMER_CNTRL_CNT_EN; // Счет вверх по TIM_CLK, и включить таймер.	
+	MDR_TIMER1->CNTRL |= TIMER_CNTRL_CNT_EN; //включить таймер.	
 }
 
 void init_TIMER2(){
@@ -111,12 +111,12 @@ void init_TIMER2(){
 	/*Настройки таймера*/
 	MDR_TIMER2->PSG = T2PSG; // Предделитель частоты
 	MDR_TIMER2->ARR = T2ARR; // Основание счета (16 бит)
-	MDR_TIMER2->CNTRL = TIMER_CNTRL_ARRB_EN; //буферизация 
+	MDR_TIMER2->CNTRL = 0x00000002; //буферизация
 	
 	/*Разрешения работы*/
 	MDR_TIMER2->IE = 0x00001102;		//прерывание по cnt=arr
 	NVIC_EnableIRQ(Timer2_IRQn); //разрешить прерывания таймера	
-	MDR_TIMER2->CNTRL |= TIMER_CNTRL_CNT_EN; // Счет вверх по TIM_CLK, и включить таймер.	
+	MDR_TIMER2->CNTRL |= TIMER_CNTRL_CNT_EN; //  включить таймер.	
 }
 
 void init_ADC(void){
@@ -230,7 +230,7 @@ void control_loop(void){
 
 	PWMpower = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;
 	PWM_DIRECTION direction = (OBJ_angle>COM_angle)? PWMBACKWARD : PWMFORWARD;
-	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
+	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPNONINVERT);
 	changePWM(direction, mapped_ccr);	
 	
 	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
@@ -238,23 +238,33 @@ void control_loop(void){
 	data_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
 	data_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
 	data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
-	data_to_send[5] = T1ARR - mapped_ccr;
+	data_to_send[5] = mapped_ccr;
 	data_to_send[6] = direction;
 	send_data(28);
 }
 
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
-//	uint32_t mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
-//	//несимметричный	
+////	uint32_t mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
+	//несимметричный	
+//	switch (direction){
+//		case PWMFORWARD:
+//			MDR_TIMER1->CCR1 = mapped_ccr;
+//			MDR_TIMER1->CCR2 = T1ARR; //выключен
+//			break;		
+//		case PWMBACKWARD:
+//			MDR_TIMER1->CCR1 = T1ARR; //выключен
+//			MDR_TIMER1->CCR2 = mapped_ccr;
+//	}
+	//поочередный (для него надо включать MAPNONINVERT и менять data_to_send[5])
 	switch (direction){
 		case PWMFORWARD:
-			MDR_TIMER1->CCR1 = mapped_ccr;
-			MDR_TIMER1->CCR2 = T1ARR; //выключен
+			MDR_TIMER1->CCR1 = (T1ARR>>1) - (mapped_ccr>>1);
+			MDR_TIMER1->CCR2 = (T1ARR>>1) + (mapped_ccr>>1);
 			break;		
 		case PWMBACKWARD:
-			MDR_TIMER1->CCR1 = T1ARR; //выключен
-			MDR_TIMER1->CCR2 = mapped_ccr;
-	}
+			MDR_TIMER1->CCR1 = (T1ARR>>1) + (mapped_ccr>>1);
+			MDR_TIMER1->CCR2 = (T1ARR>>1) - (mapped_ccr>>1);
+	}	
 }
 
 void init_SysTick(){

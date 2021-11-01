@@ -3,9 +3,9 @@
 <title>Static Call Graph - [.\Objects\drivecontrol.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\drivecontrol.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Fri Oct 29 13:00:42 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Mon Nov  1 14:21:06 2021
 <BR><P>
-<H3>Maximum Stack Usage =        212 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =        204 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
 Timer2_IRQHandler &rArr; control_loop &rArr; send_data &rArr; USB_CDC_SendData &rArr; USB_EP_doDataIn &rArr; USB_EP_sendInDataPortion &rArr; USB_EP_SetReady &rArr; USB_SetSEPxCTRL
 <P>
@@ -523,7 +523,7 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> startup_mdr32f9qx.o(.text)
 </UL>
 <P><STRONG><a name="[15]"></a>Timer2_IRQHandler</STRONG> (Thumb, 24 bytes, Stack size 8 bytes, it.o(.text.Timer2_IRQHandler))
-<BR><BR>[Stack]<UL><LI>Max Depth = 212<LI>Call Chain = Timer2_IRQHandler &rArr; control_loop &rArr; send_data &rArr; USB_CDC_SendData &rArr; USB_EP_doDataIn &rArr; USB_EP_sendInDataPortion &rArr; USB_EP_SetReady &rArr; USB_SetSEPxCTRL
+<BR><BR>[Stack]<UL><LI>Max Depth = 204<LI>Call Chain = Timer2_IRQHandler &rArr; control_loop &rArr; send_data &rArr; USB_CDC_SendData &rArr; USB_EP_doDataIn &rArr; USB_EP_sendInDataPortion &rArr; USB_EP_SetReady &rArr; USB_SetSEPxCTRL
 </UL>
 <BR>[Calls]<UL><LI><a href="#[45]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;control_loop
 </UL>
@@ -873,14 +873,14 @@ Global Symbols
 <LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USB_EP_SetReady
 </UL>
 
-<P><STRONG><a name="[76]"></a>changePWM</STRONG> (Thumb, 80 bytes, Stack size 12 bytes, main.o(.text.changePWM))
+<P><STRONG><a name="[76]"></a>changePWM</STRONG> (Thumb, 96 bytes, Stack size 12 bytes, main.o(.text.changePWM))
 <BR><BR>[Stack]<UL><LI>Max Depth = 12<LI>Call Chain = changePWM
 </UL>
 <BR>[Called By]<UL><LI><a href="#[45]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;control_loop
 </UL>
 
-<P><STRONG><a name="[45]"></a>control_loop</STRONG> (Thumb, 304 bytes, Stack size 56 bytes, main.o(.text.control_loop))
-<BR><BR>[Stack]<UL><LI>Max Depth = 204<LI>Call Chain = control_loop &rArr; send_data &rArr; USB_CDC_SendData &rArr; USB_EP_doDataIn &rArr; USB_EP_sendInDataPortion &rArr; USB_EP_SetReady &rArr; USB_SetSEPxCTRL
+<P><STRONG><a name="[45]"></a>control_loop</STRONG> (Thumb, 296 bytes, Stack size 48 bytes, main.o(.text.control_loop))
+<BR><BR>[Stack]<UL><LI>Max Depth = 196<LI>Call Chain = control_loop &rArr; send_data &rArr; USB_CDC_SendData &rArr; USB_EP_doDataIn &rArr; USB_EP_sendInDataPortion &rArr; USB_EP_SetReady &rArr; USB_SetSEPxCTRL
 </UL>
 <BR>[Calls]<UL><LI><a href="#[72]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;take_timestamp
 <LI><a href="#[77]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;send_data
@@ -908,7 +908,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[88]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;init_GPIO
 </UL>
 
-<P><STRONG><a name="[7a]"></a>filter_analog</STRONG> (Thumb, 154 bytes, Stack size 8 bytes, main.o(.text.filter_analog))
+<P><STRONG><a name="[7a]"></a>filter_analog</STRONG> (Thumb, 172 bytes, Stack size 8 bytes, main.o(.text.filter_analog))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = filter_analog
 </UL>
 <BR>[Called By]<UL><LI><a href="#[71]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;get_OBJ_angle
