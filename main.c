@@ -1,7 +1,7 @@
 #include "main.h"
 
 uint32_t T1CCR = 65;
-uint16_t com_angle = 2000;
+uint16_t com_angle = 2250;
 uint64_t timestamp_command_recieved = 0;
 uint64_t timestamp_obj_recieved = 0;
 uint8_t timestamp_overflow_counter = 0;
@@ -230,7 +230,9 @@ void control_loop(void){
 
 	PWMpower = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;
 	PWM_DIRECTION direction = (OBJ_angle>COM_angle)? PWMBACKWARD : PWMFORWARD;
-	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPNONINVERT);
+//	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPNONINVERT);
+	mapped_ccr = PWMpower *PWM_SATURATION_COEFFICIENT;
+	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
 	changePWM(direction, mapped_ccr);	
 	
 	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
@@ -258,12 +260,12 @@ void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
 	//поочередный (для него надо включать MAPNONINVERT и менять data_to_send[5])
 	switch (direction){
 		case PWMFORWARD:
-			MDR_TIMER1->CCR1 = (T1ARR>>1) - (mapped_ccr>>1);
-			MDR_TIMER1->CCR2 = (T1ARR>>1) + (mapped_ccr>>1);
-			break;		
-		case PWMBACKWARD:
 			MDR_TIMER1->CCR1 = (T1ARR>>1) + (mapped_ccr>>1);
 			MDR_TIMER1->CCR2 = (T1ARR>>1) - (mapped_ccr>>1);
+			break;		
+		case PWMBACKWARD:
+			MDR_TIMER1->CCR1 = (T1ARR>>1) - (mapped_ccr>>1);
+			MDR_TIMER1->CCR2 = (T1ARR>>1) + (mapped_ccr>>1);
 	}	
 }
 
