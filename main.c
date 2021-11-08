@@ -46,17 +46,17 @@ void init_GPIO(){
 	PORT_Init(PWM_PORT, &GPIO_user_init);
 	
 	//ADC1
-	GPIO_user_init.PORT_Pin       = (ADC_OBJ_PIN);
-	GPIO_user_init.PORT_OE        = PORT_OE_IN;
-	GPIO_user_init.PORT_PULL_UP   = PORT_PULL_UP_OFF;
-	GPIO_user_init.PORT_PULL_DOWN = PORT_PULL_DOWN_OFF;
-	GPIO_user_init.PORT_PD_SHM    = PORT_PD_SHM_OFF;
-	GPIO_user_init.PORT_PD        = PORT_PD_DRIVER;
-	GPIO_user_init.PORT_GFEN      = PORT_GFEN_OFF;
-	GPIO_user_init.PORT_FUNC      = PORT_FUNC_PORT;
-	GPIO_user_init.PORT_SPEED     = PORT_SPEED_MAXFAST;
-	GPIO_user_init.PORT_MODE      = PORT_MODE_ANALOG;	
-	PORT_Init(ADC_PORT, &GPIO_user_init);
+//	GPIO_user_init.PORT_Pin       = (ADC_OBJ_PIN);
+//	GPIO_user_init.PORT_OE        = PORT_OE_IN;
+//	GPIO_user_init.PORT_PULL_UP   = PORT_PULL_UP_OFF;
+//	GPIO_user_init.PORT_PULL_DOWN = PORT_PULL_DOWN_OFF;
+//	GPIO_user_init.PORT_PD_SHM    = PORT_PD_SHM_OFF;
+//	GPIO_user_init.PORT_PD        = PORT_PD_DRIVER;
+//	GPIO_user_init.PORT_GFEN      = PORT_GFEN_OFF;
+//	GPIO_user_init.PORT_FUNC      = PORT_FUNC_PORT;
+//	GPIO_user_init.PORT_SPEED     = PORT_SPEED_MAXFAST;
+//	GPIO_user_init.PORT_MODE      = PORT_MODE_ANALOG;	
+//	PORT_Init(ADC_PORT, &GPIO_user_init);
 }
 
 void deinit_TIMER(MDR_TIMER_TypeDef *Timer){
@@ -230,8 +230,8 @@ void control_loop(void){
 
 	PWMpower = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;
 	PWM_DIRECTION direction = (OBJ_angle>COM_angle)? PWMBACKWARD : PWMFORWARD;
-//	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPNONINVERT);
-	mapped_ccr = PWMpower *PWM_SATURATION_COEFFICIENT;
+	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPNONINVERT);
+//	mapped_ccr = PWMpower *PWM_SATURATION_COEFFICIENT;
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
 	changePWM(direction, mapped_ccr);	
 	

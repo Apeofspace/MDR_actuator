@@ -22,7 +22,7 @@
 #define T2ARR 999
 #define DEADTIMECONST 80  //При 80мГц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
 #define PWMDEADZONE 0.0015  //зона нечувстсвительности
-#define PWM_SATURATION_COEFFICIENT 10 //коэффициент умножения коэффициента заполнения
+#define PWM_SATURATION_COEFFICIENT 12 //коэффициент умножения коэффициента заполнения
 #define COM_LIMIT_LEFT 0x100 //чтобы не перекатывалось через ноль
 #define COM_LIMIT_RIGHT 0xEFF
 

@@ -55,7 +55,7 @@ void init_DMA(){
 	// —брос прерывани€ от DMA
   NVIC_ClearPendingIRQ (DMA_IRQn);  
 
-  
+	
   DMA_DataCtrl_Pri.DMA_SourceBaseAddr = (uint32_t)&MDR_ADC->ADC1_RESULT;
   DMA_DataCtrl_Pri.DMA_DestBaseAddr   = (uint32_t)&data_dma;
   DMA_DataCtrl_Pri.DMA_CycleSize      = DMA_FILTER_SIZE;
