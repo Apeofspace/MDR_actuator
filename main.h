@@ -21,15 +21,15 @@
 #define T2PSG 79
 #define T2ARR 999
 #define DEADTIMECONST 80  //При 80мГц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
-#define PWMDEADZONE 0.0015  //зона нечувстсвительности
-#define PWM_SATURATION_COEFFICIENT 12 //коэффициент умножения коэффициента заполнения
-#define COM_LIMIT_LEFT 0x100 //чтобы не перекатывалось через ноль
-#define COM_LIMIT_RIGHT 0xEFF
+#define PWMDEADZONE 0.01  //зона нечувстсвительности
+#define PWM_KOEF_USIL 100 //коэффициент умножения коэффициента заполнения
+#define COM_LIMIT_LEFT 660 //чтобы не перекатывалось через ноль
+#define COM_LIMIT_RIGHT 3720
 
 /*Переменные*/
 #define USB_DATA_BUFFER_SIZE 7
 extern uint32_t dmaCtrlStart;
-extern uint32_t completedIRQ;
+//extern uint32_t completedIRQ;
 extern uint16_t com_angle;
 extern uint32_t T1CCR;
 extern uint64_t timestamp_command_recieved, timestamp_obj_recieved; //время, когда было получена команда, и время, когда была отработана команда

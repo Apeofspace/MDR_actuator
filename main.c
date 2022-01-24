@@ -6,7 +6,7 @@ uint64_t timestamp_command_recieved = 0;
 uint64_t timestamp_obj_recieved = 0;
 uint8_t timestamp_overflow_counter = 0;
 volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
-uint32_t completedIRQ;
+//uint32_t completedIRQ;
 uint32_t dmaCtrlStart;
 uint16_t data_dma[DMA_FILTER_SIZE];
 
@@ -79,6 +79,7 @@ void deinit_TIMER(MDR_TIMER_TypeDef *Timer){
 }
 
 void init_TIMER1(){
+	/*Управление ШИМ*/
 	/*Обнуление*/
 	deinit_TIMER(MDR_TIMER1);
 	
@@ -177,7 +178,7 @@ uint16_t get_OBJ_angle(void){
 	#elif defined (USE_DMA_FILTER)
 	PORT_SetBits(MDR_PORTC,PORT_Pin_1);
 	uint32_t sum = 0;
-	completedIRQ = 0;
+//	completedIRQ = 0;
 		// Restart DMA
 	DMA_ControlTable[DMA_Channel_ADC1].DMA_Control = dmaCtrlStart;
 	DMA_Cmd(DMA_Channel_ADC1, ENABLE);	
@@ -200,15 +201,15 @@ uint16_t get_OBJ_angle(void){
 }
 #endif
 
-/* Коэффициент заполнения умножается на saturation_coef, но не может быть больше 1 */
-uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert){
+/* Коэффициент заполнения умножается на koef_usil, но не может быть больше 1 */
+uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t koef_usil, MAP_INVERT invert){
 	if ((range_min>range_max) || (base_min>base_max) || (data<base_min)) return 0;
 	uint32_t delta_range = range_max-range_min;
 	uint32_t delta_base = base_max - base_min;
 	uint32_t data_prived = data - base_min;
 	float coef_zapoln = ((float)data_prived/(float)(delta_base+1));
 	if (coef_zapoln<(float)PWMDEADZONE) return (invert == MAPNONINVERT)? range_min : range_max; //зона нечувствительности
-	coef_zapoln = coef_zapoln * saturation_coef;
+	coef_zapoln = coef_zapoln * koef_usil;
 	if (coef_zapoln>1) coef_zapoln = 1;
 	return (invert == MAPNONINVERT)? range_min + (uint32_t)(coef_zapoln*(float)delta_range) : range_max - (uint32_t)(coef_zapoln*(float)delta_range);
 }
@@ -230,9 +231,18 @@ void control_loop(void){
 
 	PWMpower = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;
 	PWM_DIRECTION direction = (OBJ_angle>COM_angle)? PWMBACKWARD : PWMFORWARD;
-	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPNONINVERT);
-//	mapped_ccr = PWMpower *PWM_SATURATION_COEFFICIENT;
+	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, MAPNONINVERT);
+//	mapped_ccr = PWMpower *PWM_KOEF_USIL;
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
+	
+	//!!!!!!!!!!EXPERIMENTS!!!!!!!!!!
+////	if (abs(float(mapped_ccr)-float(T1ARR))/(float(mapped_ccr)+float(T1ARR)) > 0.02){
+//	double diff;
+//	diff = (T1ARR-mapped_ccr)/T1ARR;
+//	if (diff < 0) diff = diff * (-1);
+//	if (diff > 0.02){
+//		changePWM(direction, mapped_ccr);	
+//	}
 	changePWM(direction, mapped_ccr);	
 	
 	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
@@ -246,7 +256,7 @@ void control_loop(void){
 }
 
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
-////	uint32_t mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_SATURATION_COEFFICIENT, MAPINVERT);
+////	uint32_t mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, MAPINVERT);
 	//несимметричный	
 //	switch (direction){
 //		case PWMFORWARD:

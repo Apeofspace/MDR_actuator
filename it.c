@@ -19,7 +19,7 @@ void DMA_IRQHandler(void)
   ADC1_GetResult();
 	DMA_Cmd(DMA_Channel_ADC1, DISABLE);	//необязательно?
   
-  completedIRQ = 1;
+//  completedIRQ = 1;
   PORT_ResetBits(MDR_PORTC,PORT_Pin_1);
 	PORT_SetBits(MDR_PORTC,PORT_Pin_0);
   NVIC_ClearPendingIRQ (DMA_IRQn);
