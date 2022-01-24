@@ -156,7 +156,7 @@ uint16_t get_COM_angle(void){
 }
 
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
-	static uint16_t filter[BASIC_FILTER_SIZE][2];
+	static uint16_t filter[BASIC_FILTER_SIZE][3];
 	static uint8_t filter_count = 0;
 	uint16_t sum = 0; //должно хватить: 4 бита впереди свободные. значит можно просуммировать до 16 значений
 	filter[filter_count][channel] = data;
@@ -167,9 +167,9 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 }
 
 uint16_t get_OBJ_angle(void){
+	ADC1_SetChannel(ADC_OBJ_CHANNEL);
 	#if defined (USE_BASIC_FILTER)&&!defined(USE_DMA_FILTER)
 		//run ADC
-	ADC1_SetChannel(ADC_OBJ_CHANNEL);
 	BRD_ADC1_RunSample(0);
 	ADC1_Start();
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
@@ -178,15 +178,13 @@ uint16_t get_OBJ_angle(void){
 	#elif defined (USE_DMA_FILTER)
 	PORT_SetBits(MDR_PORTC,PORT_Pin_1);
 	uint32_t sum = 0;
-//	completedIRQ = 0;
 		// Restart DMA
 	DMA_ControlTable[DMA_Channel_ADC1].DMA_Control = dmaCtrlStart;
 	DMA_Cmd(DMA_Channel_ADC1, ENABLE);	
 	BRD_ADC1_RunSample(1);
-//	while(!completedIRQ){};
 	for (uint32_t i = 0; i < DMA_FILTER_SIZE; i++) sum += data_dma[i]&ADC_MASK; 
 	#if defined(USE_BASIC_FILTER)
-	return filter_analog(sum/DMA_FILTER_SIZE, OBJ);
+	return filter_analog(sum/DMA_FILTER_SIZE, OBJ); // не нужн
 	#elif !defined(USE_BASIC_FILTER)
 	return sum/DMA_FILTER_SIZE;
 	#endif
@@ -194,6 +192,27 @@ uint16_t get_OBJ_angle(void){
 	#elif defined (USE_NO_FILTER)
 	//run ADC
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
+	BRD_ADC1_RunSample(0);
+	ADC1_Start();
+	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
+	return ADC1_GetResult();
+}
+#endif
+
+uint16_t get_TOK(void){
+	ADC1_SetChannel(ADC_TOK_CHANNEL);
+	#if defined (USE_DMA_FILTER)
+	PORT_SetBits(MDR_PORTC,PORT_Pin_1);
+	uint32_t sum = 0;
+	DMA_ControlTable[DMA_Channel_ADC1].DMA_Control = dmaCtrlStart;
+	DMA_Cmd(DMA_Channel_ADC1, ENABLE);	
+	BRD_ADC1_RunSample(1);
+	for (uint32_t i = 0; i < DMA_FILTER_SIZE; i++) sum += data_dma[i]&ADC_MASK; 
+	return sum/DMA_FILTER_SIZE;
+	
+}
+	#elif defined (USE_NO_FILTER)
+	//run ADC
 	BRD_ADC1_RunSample(0);
 	ADC1_Start();
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
@@ -222,6 +241,10 @@ void control_loop(void){
 	timestamp_command_recieved = timestamp_obj_recieved;
 	reload_SysTick();
 	
+//	uint16_t TOK = get_TOK();
+	uint16_t TOK = 100;
+	
+	
 	uint16_t COM_angle = get_COM_angle();
 	take_timestamp(&timestamp_command_recieved);
 	reload_SysTick();
@@ -234,15 +257,6 @@ void control_loop(void){
 	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, MAPNONINVERT);
 //	mapped_ccr = PWMpower *PWM_KOEF_USIL;
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
-	
-	//!!!!!!!!!!EXPERIMENTS!!!!!!!!!!
-////	if (abs(float(mapped_ccr)-float(T1ARR))/(float(mapped_ccr)+float(T1ARR)) > 0.02){
-//	double diff;
-//	diff = (T1ARR-mapped_ccr)/T1ARR;
-//	if (diff < 0) diff = diff * (-1);
-//	if (diff > 0.02){
-//		changePWM(direction, mapped_ccr);	
-//	}
 	changePWM(direction, mapped_ccr);	
 	
 	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
@@ -252,7 +266,10 @@ void control_loop(void){
 	data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
 	data_to_send[5] = mapped_ccr;
 	data_to_send[6] = direction;
-	send_data(28);
+	
+	data_to_send[7] = TOK;
+	
+	send_data(32);
 }
 
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){

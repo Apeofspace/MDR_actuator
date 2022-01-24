@@ -14,7 +14,7 @@
 #define USE_BASIC_FILTER
 //#define USE_NO_FILTER
 #define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
-#define DMA_FILTER_SIZE 30UL
+#define DMA_FILTER_SIZE 20UL
 #define BASIC_FILTER_SIZE 7UL
 #define T1PSG 0
 #define T1ARR 3999
@@ -27,7 +27,7 @@
 #define COM_LIMIT_RIGHT 3720
 
 /*Переменные*/
-#define USB_DATA_BUFFER_SIZE 7
+#define USB_DATA_BUFFER_SIZE 8 //7 + tok
 extern uint32_t dmaCtrlStart;
 //extern uint32_t completedIRQ;
 extern uint16_t com_angle;
@@ -37,7 +37,7 @@ extern uint8_t timestamp_overflow_counter;
 extern volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
 typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
-typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
+typedef enum {COM = 1, OBJ = 0, TOK = 2} SIGNAL_CHANNEL;
 extern DMA_CtrlDataInitTypeDef DMA_DataCtrl_Pri;
 extern DMA_ChannelInitTypeDef DMA_ChanCtrl;
 extern uint16_t data_dma[DMA_FILTER_SIZE];
@@ -62,6 +62,7 @@ void init_LED(void);
 uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert);
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr);
 void control_loop(void);
+uint16_t get_TOK(void);
 uint16_t get_OBJ_angle(void);
 uint16_t get_COM_angle(void);
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel);

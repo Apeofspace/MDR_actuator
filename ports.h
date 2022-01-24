@@ -1,6 +1,7 @@
 #define ADC_PORT MDR_PORTD //XP13
 //#define ADC_COM_CHANNEL ADC_CH_ADC2 //канал АЦП, задающий командный сигнал
 #define ADC_OBJ_CHANNEL ADC_CH_ADC5 //канал АЦП, отслеживающий объект управления
+#define ADC_TOK_CHANNEL ADC_CH_ADC6
 
 
 #define PWM_PORT MDR_PORTA //XP14 
