@@ -170,13 +170,13 @@ uint16_t get_OBJ_angle(void){
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
 	#if defined (USE_BASIC_FILTER)&&!defined(USE_DMA_FILTER)
 		//run ADC
-	BRD_ADC1_RunSample(0);
+	BRD_ADC1_RunSample(0); //0 = одиночное 1 = последовательное
 	ADC1_Start();
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
 	return filter_analog(ADC1_GetResult()&ADC_MASK, OBJ);
 }
 	#elif defined (USE_DMA_FILTER)
-	PORT_SetBits(MDR_PORTC,PORT_Pin_1);
+	PORT_SetBits(MDR_PORTC,PORT_Pin_1); //TODO: whats up with this diode??
 	uint32_t sum = 0;
 		// Restart DMA
 	DMA_ControlTable[DMA_Channel_ADC1].DMA_Control = dmaCtrlStart;
@@ -200,18 +200,17 @@ uint16_t get_OBJ_angle(void){
 #endif
 
 uint16_t get_TOK(void){
+	//this doesn't work with DMA yet. TODO: change defines etc
 	ADC1_SetChannel(ADC_TOK_CHANNEL);
-	#if defined (USE_DMA_FILTER)
-	PORT_SetBits(MDR_PORTC,PORT_Pin_1);
+	#if defined(USE_DMA_FILTER)
 	uint32_t sum = 0;
 	DMA_ControlTable[DMA_Channel_ADC1].DMA_Control = dmaCtrlStart;
 	DMA_Cmd(DMA_Channel_ADC1, ENABLE);	
 	BRD_ADC1_RunSample(1);
 	for (uint32_t i = 0; i < DMA_FILTER_SIZE; i++) sum += data_dma[i]&ADC_MASK; 
-	return sum/DMA_FILTER_SIZE;
-	
+	return sum/DMA_FILTER_SIZE;	
 }
-	#elif defined (USE_NO_FILTER)
+	#elif !defined (USE_DMA_FILTER)
 	//run ADC
 	BRD_ADC1_RunSample(0);
 	ADC1_Start();
@@ -241,8 +240,8 @@ void control_loop(void){
 	timestamp_command_recieved = timestamp_obj_recieved;
 	reload_SysTick();
 	
-//	uint16_t TOK = get_TOK();
-	uint16_t TOK = 100;
+	uint16_t TOK = get_TOK();
+//	uint16_t TOK = 100;
 	
 	
 	uint16_t COM_angle = get_COM_angle();

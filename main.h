@@ -10,7 +10,7 @@
 #include "MDR32F9Qx_dma.h"
 
 /*Все изменяемые параметры*/
-#define USE_DMA_FILTER
+//#define USE_DMA_FILTER
 #define USE_BASIC_FILTER
 //#define USE_NO_FILTER
 #define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
