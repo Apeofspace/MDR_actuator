@@ -9,6 +9,7 @@ volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
 //uint32_t completedIRQ;
 uint32_t dmaCtrlStart;
 uint16_t data_dma[DMA_FILTER_SIZE];
+uint8_t amount_of_data_bites = USB_DATA_BUFFER_SIZE * 4;
 
 void deinit_all_GPIO(void){
 	PORT_DeInit(MDR_PORTA);
@@ -44,19 +45,6 @@ void init_GPIO(){
 	GPIO_user_init.PORT_SPEED     = PORT_SPEED_MAXFAST;
 	GPIO_user_init.PORT_MODE      = PORT_MODE_DIGITAL;	
 	PORT_Init(PWM_PORT, &GPIO_user_init);
-	
-	//ADC1
-//	GPIO_user_init.PORT_Pin       = (ADC_OBJ_PIN);
-//	GPIO_user_init.PORT_OE        = PORT_OE_IN;
-//	GPIO_user_init.PORT_PULL_UP   = PORT_PULL_UP_OFF;
-//	GPIO_user_init.PORT_PULL_DOWN = PORT_PULL_DOWN_OFF;
-//	GPIO_user_init.PORT_PD_SHM    = PORT_PD_SHM_OFF;
-//	GPIO_user_init.PORT_PD        = PORT_PD_DRIVER;
-//	GPIO_user_init.PORT_GFEN      = PORT_GFEN_OFF;
-//	GPIO_user_init.PORT_FUNC      = PORT_FUNC_PORT;
-//	GPIO_user_init.PORT_SPEED     = PORT_SPEED_MAXFAST;
-//	GPIO_user_init.PORT_MODE      = PORT_MODE_ANALOG;	
-//	PORT_Init(ADC_PORT, &GPIO_user_init);
 }
 
 void deinit_TIMER(MDR_TIMER_TypeDef *Timer){
@@ -176,12 +164,11 @@ uint16_t get_OBJ_angle(void){
 	return filter_analog(ADC1_GetResult()&ADC_MASK, OBJ);
 }
 	#elif defined (USE_DMA_FILTER)
-	PORT_SetBits(MDR_PORTC,PORT_Pin_1); //TODO: whats up with this diode??
 	uint32_t sum = 0;
-		// Restart DMA
+	BRD_ADC1_RunSample(1);	
+	// Restart DMA
 	DMA_ControlTable[DMA_Channel_ADC1].DMA_Control = dmaCtrlStart;
 	DMA_Cmd(DMA_Channel_ADC1, ENABLE);	
-	BRD_ADC1_RunSample(1);
 	for (uint32_t i = 0; i < DMA_FILTER_SIZE; i++) sum += data_dma[i]&ADC_MASK; 
 	#if defined(USE_BASIC_FILTER)
 	return filter_analog(sum/DMA_FILTER_SIZE, OBJ); // не нужн
@@ -200,13 +187,13 @@ uint16_t get_OBJ_angle(void){
 #endif
 
 uint16_t get_TOK(void){
-	//this doesn't work with DMA yet. TODO: change defines etc
+	//this doesn't work with DMA yet
 	ADC1_SetChannel(ADC_TOK_CHANNEL);
 	#if defined(USE_DMA_FILTER)
 	uint32_t sum = 0;
+	BRD_ADC1_RunSample(1);
 	DMA_ControlTable[DMA_Channel_ADC1].DMA_Control = dmaCtrlStart;
 	DMA_Cmd(DMA_Channel_ADC1, ENABLE);	
-	BRD_ADC1_RunSample(1);
 	for (uint32_t i = 0; i < DMA_FILTER_SIZE; i++) sum += data_dma[i]&ADC_MASK; 
 	return sum/DMA_FILTER_SIZE;	
 }
@@ -240,13 +227,11 @@ void control_loop(void){
 	timestamp_command_recieved = timestamp_obj_recieved;
 	reload_SysTick();
 	
-	uint16_t TOK = get_TOK();
-//	uint16_t TOK = 100;
-	
-	
 	uint16_t COM_angle = get_COM_angle();
 	take_timestamp(&timestamp_command_recieved);
 	reload_SysTick();
+	
+	uint16_t TOK = get_TOK();
 	
 	if (COM_angle<COM_LIMIT_LEFT) COM_angle = COM_LIMIT_LEFT;
 	if (COM_angle>COM_LIMIT_RIGHT) COM_angle = COM_LIMIT_RIGHT;
@@ -265,10 +250,9 @@ void control_loop(void){
 	data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
 	data_to_send[5] = mapped_ccr;
 	data_to_send[6] = direction;
-	
 	data_to_send[7] = TOK;
 	
-	send_data(32);
+	send_data(amount_of_data_bites);
 }
 
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){

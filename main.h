@@ -21,15 +21,14 @@
 #define T2PSG 79
 #define T2ARR 999
 #define DEADTIMECONST 80  //При 80мГц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
-#define PWMDEADZONE 0.01  //зона нечувстсвительности
-#define PWM_KOEF_USIL 100 //коэффициент умножения коэффициента заполнения
-#define COM_LIMIT_LEFT 660 //чтобы не перекатывалось через ноль
-#define COM_LIMIT_RIGHT 3720
+#define PWMDEADZONE 0.05  //зона нечувстсвительности
+#define PWM_KOEF_USIL 100 //коэффициент усиления
+#define COM_LIMIT_LEFT 380 //чтобы не билось об края
+#define COM_LIMIT_RIGHT 3900
 
 /*Переменные*/
-#define USB_DATA_BUFFER_SIZE 8 //7 + tok
+#define USB_DATA_BUFFER_SIZE 8 
 extern uint32_t dmaCtrlStart;
-//extern uint32_t completedIRQ;
 extern uint16_t com_angle;
 extern uint32_t T1CCR;
 extern uint64_t timestamp_command_recieved, timestamp_obj_recieved; //время, когда было получена команда, и время, когда была отработана команда
@@ -37,11 +36,12 @@ extern uint8_t timestamp_overflow_counter;
 extern volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
 typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
-typedef enum {COM = 1, OBJ = 0, TOK = 2} SIGNAL_CHANNEL;
+typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
 extern DMA_CtrlDataInitTypeDef DMA_DataCtrl_Pri;
 extern DMA_ChannelInitTypeDef DMA_ChanCtrl;
 extern uint16_t data_dma[DMA_FILTER_SIZE];
 extern DMA_CtrlDataTypeDef DMA_ControlTable[DMA_Channels_Number * (1 + DMA_AlternateData)];
+extern uint8_t amount_of_data_bites;
 
 /*Inits*/
 void init_CPU(void);

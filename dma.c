@@ -30,6 +30,7 @@ DMA_ChannelInitTypeDef DMA_ChanCtrl =
 
 
 void BRD_ADC1_RunSingle(uint32_t goEna)
+	//same as ADC1_Start();
 {
   if (goEna)
     MDR_ADC->ADC1_CFG |= ADC1_CFG_REG_GO;
@@ -38,6 +39,7 @@ void BRD_ADC1_RunSingle(uint32_t goEna)
 }
 
 void BRD_ADC1_RunSample(uint32_t sampleEna)
+	//starts continuous conversion
 {
   if (sampleEna)
     MDR_ADC->ADC1_CFG |= ADC1_CFG_REG_SAMPLE;
