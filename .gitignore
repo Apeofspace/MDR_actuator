@@ -56,3 +56,6 @@
 
 
 # End of https://www.toptal.com/developers/gitignore/api/keil
+JLinkLog.txt
+*.htm
+*.axf

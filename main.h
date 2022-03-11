@@ -10,9 +10,10 @@
 #include "MDR32F9Qx_dma.h"
 
 /*Все изменяемые параметры*/
-//#define USE_DMA_FILTER
+#define USE_DMA_FILTER
 #define USE_BASIC_FILTER
 //#define USE_NO_FILTER
+//#define MEASURE_AND_SEND_TOK //нельзя включать одновременно с DMA фильтром
 #define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
 #define DMA_FILTER_SIZE 20UL
 #define BASIC_FILTER_SIZE 7UL
@@ -21,8 +22,8 @@
 #define T2PSG 79
 #define T2ARR 999
 #define DEADTIMECONST 80  //При 80мГц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
-#define PWMDEADZONE 0.05  //зона нечувстсвительности
-#define PWM_KOEF_USIL 100 //коэффициент усиления
+#define PWMDEADZONE 0.005  //зона нечувстсвительности
+#define PWM_KOEF_USIL 12 //коэффициент усиления
 #define COM_LIMIT_LEFT 380 //чтобы не билось об края
 #define COM_LIMIT_RIGHT 3900
 

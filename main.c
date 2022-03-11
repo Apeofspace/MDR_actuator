@@ -186,6 +186,7 @@ uint16_t get_OBJ_angle(void){
 }
 #endif
 
+#if defined (MEASURE_AND_SEND_TOK)
 uint16_t get_TOK(void){
 	//this doesn't work with DMA yet
 	ADC1_SetChannel(ADC_TOK_CHANNEL);
@@ -204,6 +205,7 @@ uint16_t get_TOK(void){
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
 	return ADC1_GetResult();
 }
+#endif
 #endif
 
 /* Коэффициент заполнения умножается на koef_usil, но не может быть больше 1 */
@@ -231,8 +233,11 @@ void control_loop(void){
 	take_timestamp(&timestamp_command_recieved);
 	reload_SysTick();
 	
-	uint16_t TOK = get_TOK();
-	
+	uint16_t TOK = 0;
+	#if defined (MEASURE_AND_SEND_TOK)
+	TOK = get_TOK();
+	#endif
+
 	if (COM_angle<COM_LIMIT_LEFT) COM_angle = COM_LIMIT_LEFT;
 	if (COM_angle>COM_LIMIT_RIGHT) COM_angle = COM_LIMIT_RIGHT;
 
