@@ -261,17 +261,6 @@ void control_loop(void){
 }
 
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
-////	uint32_t mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, MAPINVERT);
-	//несимметричный	
-//	switch (direction){
-//		case PWMFORWARD:
-//			MDR_TIMER1->CCR1 = mapped_ccr;
-//			MDR_TIMER1->CCR2 = T1ARR; //выключен
-//			break;		
-//		case PWMBACKWARD:
-//			MDR_TIMER1->CCR1 = T1ARR; //выключен
-//			MDR_TIMER1->CCR2 = mapped_ccr;
-//	}
 	//поочередный (для него надо включать MAPNONINVERT и менять data_to_send[5])
 	switch (direction){
 		case PWMFORWARD:
@@ -311,13 +300,16 @@ int main(){
 	init_USB();
   init_PER();
 	init_GPIO();
+	init_debug_LED();
 	#ifdef USE_DMA_FILTER
 	init_DMA();
 	#endif
 	init_ADC();
+	init_UART();
 	init_SysTick();
 	init_TIMER1();
 	init_TIMER2();
+	
 
 	while (1){}
 }
