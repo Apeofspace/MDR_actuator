@@ -259,17 +259,17 @@
                 <Size>0x0</Size>
               </XRAM>
               <OCR_RVCT1>
-                <Type>1</Type>
+                <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT1>
               <OCR_RVCT2>
-                <Type>1</Type>
+                <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT2>
               <OCR_RVCT3>
-                <Type>1</Type>
+                <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT3>
@@ -279,7 +279,7 @@
                 <Size>0x20000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
-                <Type>1</Type>
+                <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT5>
@@ -313,7 +313,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -361,7 +361,7 @@
             </VariousControls>
           </Aads>
           <LDads>
-            <umfTarg>0</umfTarg>
+            <umfTarg>1</umfTarg>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
             <noStLib>0</noStLib>
@@ -384,19 +384,24 @@
           <GroupName>Source Group 1</GroupName>
           <Files>
             <File>
+              <FileName>CRC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\CRC.c</FilePath>
+            </File>
+            <File>
+              <FileName>leds.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\leds.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\main.c</FilePath>
             </File>
             <File>
-              <FileName>it.c</FileName>
+              <FileName>uart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\it.c</FilePath>
-            </File>
-            <File>
-              <FileName>ports.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\ports.h</FilePath>
+              <FilePath>.\uart.c</FilePath>
             </File>
             <File>
               <FileName>usb.c</FileName>
@@ -412,26 +417,6 @@
               <FileName>MDR32F9Qx_usb_device.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\MDR32F9Qx_usb_device.c</FilePath>
-            </File>
-            <File>
-              <FileName>dma.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\dma.c</FilePath>
-            </File>
-            <File>
-              <FileName>uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>CRC.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\CRC.c</FilePath>
-            </File>
-            <File>
-              <FileName>leds.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\leds.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -544,7 +529,7 @@
   <LayerInfo>
     <Layers>
       <Layer>
-        <LayName>drivecontrol</LayName>
+        <LayName>dub</LayName>
         <LayPrjMark>1</LayPrjMark>
       </Layer>
     </Layers>
