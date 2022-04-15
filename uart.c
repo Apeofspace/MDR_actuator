@@ -187,12 +187,19 @@ void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 
 void UART2_IRQHandler()
 {
-	uint16_t recieved_byte;
 		
 	if (UART_GetITStatusMasked(MDR_UART2, UART_IT_RX) == SET){
     UART_ClearITPendingBit(MDR_UART2, UART_IT_RX);
+//		Protocol_recieve_message();
 		
-		recieved_byte = UART_ReceiveData(MDR_UART2);
+		
+	}
+}
+//-----------------------------------------------------------------------
+void Protocol_recieve_message()
+{
+	uint16_t recieved_byte;
+	recieved_byte = UART_ReceiveData(MDR_UART2);
 		UART_recieved_data_buffer[UART_recieved_data_length++] = (uint8_t)recieved_byte;	
 		
 		/* Проверка четности принятого бита*/
@@ -237,9 +244,7 @@ void UART2_IRQHandler()
 					}
 				}			
 			}
-  }
 }
-
 //-----------------------------------------------------------------------
 void Protocol_change_parity_mode(Protocol_parity_mode_type mode){ 
 	/*Эта функция меняет четность УАРТа. 
@@ -296,7 +301,7 @@ void Protocol_UART_message_recieved_callback(uint8_t* Buffer){
 	flip_LED(MDR_PORTE, PORT_Pin_7);
 	
 	uint16_t data_ch1;
-	data_ch1 = (Buffer[3]<<8UL) + Buffer[4];
+	data_ch1 = (Buffer[3]<<8UL) | Buffer[4];
 	
 	com_angle = data_ch1;
 ////////////////////////////////////	CDC_recieved_data_length = Buffer[2]- 4;

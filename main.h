@@ -45,8 +45,17 @@
 //-----------------------------------------------------------------------
 
 /*Переменные*/
-#define USB_DATA_BUFFER_SIZE 8 
+
+#if defined(USE_DMA_FILTER) /*DMA filtering*/
 extern uint32_t dmaCtrlStart;
+extern DMA_CtrlDataInitTypeDef DMA_DataCtrl_Pri;
+extern DMA_ChannelInitTypeDef DMA_ChanCtrl;
+extern uint16_t data_dma[DMA_FILTER_SIZE];
+extern DMA_CtrlDataTypeDef DMA_ControlTable[DMA_Channels_Number * (1 + DMA_AlternateData)];
+#endif
+//-----------------------------------------------------------------------
+
+#define USB_DATA_BUFFER_SIZE 8 
 extern uint16_t com_angle;
 extern uint32_t T1CCR;
 extern uint64_t timestamp_command_recieved, timestamp_obj_recieved; //время, когда было получена команда, и время, когда была отработана команда
@@ -57,10 +66,6 @@ typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
 typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
 typedef enum{MODE_ADRESS = UART_Parity_1, MODE_DATA = UART_Parity_0} Protocol_parity_mode_type;
 typedef enum{MODE_RECIEVE, MODE_SEND} Protocol_mode_type;
-extern DMA_CtrlDataInitTypeDef DMA_DataCtrl_Pri;
-extern DMA_ChannelInitTypeDef DMA_ChanCtrl;
-extern uint16_t data_dma[DMA_FILTER_SIZE];
-extern DMA_CtrlDataTypeDef DMA_ControlTable[DMA_Channels_Number * (1 + DMA_AlternateData)];
 extern uint8_t amount_of_data_bites;
 extern uint8_t UART_recieved_data_buffer[BUFFER_SIZE];
 extern uint32_t UART_recieved_data_length;
@@ -81,7 +86,7 @@ void deinit_all_GPIO(void);
 void deinit_TIMER(MDR_TIMER_TypeDef *Timer);
 void init_ADC(void);
 void init_SysTick(void);
-void init_DMA(void);
+void init_DMA_filter(void);
 void init_LED(void);
 void init_UART(void);
 void DMA_common_ini(void);
@@ -111,6 +116,7 @@ int Protocol_check_adress(uint8_t* adress);
 int Protocol_check_parity(uint16_t* recieved_byte);
 void Protocol_UART_message_recieved_callback(uint8_t* Buffer); 
 void flip_LED(MDR_PORT_TypeDef* MDR_PORTx, PORT_Pin_TypeDef PORT_Pin);
+void Protocol_recieve_message(void);
 
 /*IRQs*/
 void Timer2_IRQHandler(void);

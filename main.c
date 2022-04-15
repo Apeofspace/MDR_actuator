@@ -6,9 +6,10 @@ uint64_t timestamp_command_recieved = 0;
 uint64_t timestamp_obj_recieved = 0;
 uint8_t timestamp_overflow_counter = 0;
 volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
-//uint32_t completedIRQ;
+#if defined(USE_DMA_FILTER) 
 uint32_t dmaCtrlStart;
 uint16_t data_dma[DMA_FILTER_SIZE];
+#endif
 uint8_t amount_of_data_bites = USB_DATA_BUFFER_SIZE * 4;
 //-----------------------------------------------------------------------
 void deinit_all_GPIO(void){
@@ -71,6 +72,10 @@ void init_TIMER1(){
 	/*Обнуление*/
 	deinit_TIMER(MDR_TIMER1);
 	
+	/*Тактирование таймеров*/
+	MDR_RST_CLK->PER_CLOCK |= (1 << 14 );
+	MDR_RST_CLK->TIM_CLOCK = (RST_CLK_TIM_CLOCK_TIM1_CLK_EN);
+	
 	/*Настройки таймера*/
 	MDR_TIMER1->PSG = T1PSG; // Предделитель частоты
 	MDR_TIMER1->ARR = T1ARR; // Основание счета (16 бит)
@@ -96,6 +101,10 @@ void init_TIMER1(){
 void init_TIMER2(){
 	/*Обнуление*/
 	deinit_TIMER(MDR_TIMER2);
+	
+	/*Тактирование таймеров*/
+	MDR_RST_CLK->PER_CLOCK |= (1 << 15 );
+	MDR_RST_CLK->TIM_CLOCK = (RST_CLK_TIM_CLOCK_TIM2_CLK_EN);
 	
 	/*Настройки таймера*/
 	MDR_TIMER2->PSG = T2PSG; // Предделитель частоты
@@ -314,7 +323,7 @@ void send_data(uint32_t Length){
 //-----------------------------------------------------------------------
 int main(){
 	init_CPU();
-	init_USB();
+//	init_USB();
   init_PER();
 	init_GPIO();
 //	init_debug_LED();
@@ -322,7 +331,8 @@ int main(){
 	init_DMA();
 	#endif
 	init_ADC();
-//	init_UART();
+	DMA_common_ini();
+	init_UART();
 	init_SysTick();
 	init_TIMER1();
 	init_TIMER2();
