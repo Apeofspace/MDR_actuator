@@ -32,100 +32,63 @@ void init_CPU(){
 //-----------------------------------------------------------------------
 void init_GPIO(){
 	PORT_InitTypeDef GPIO_user_init;
+	
 	deinit_all_GPIO();
 	
-	//timer1 PWM
-	GPIO_user_init.PORT_Pin       = (CH1_PIN|CH2_PIN|CH1N_PIN|CH2N_PIN);
-	GPIO_user_init.PORT_OE        = PORT_OE_OUT;
+	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTA, ENABLE);	
+//	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTB, ENABLE);	
+//	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTD, ENABLE);	
+//	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTE, ENABLE);	
+	
 	GPIO_user_init.PORT_PULL_UP   = PORT_PULL_UP_OFF;
 	GPIO_user_init.PORT_PULL_DOWN = PORT_PULL_DOWN_OFF;
 	GPIO_user_init.PORT_PD_SHM    = PORT_PD_SHM_OFF;
 	GPIO_user_init.PORT_PD        = PORT_PD_DRIVER;
 	GPIO_user_init.PORT_GFEN      = PORT_GFEN_OFF;
-	GPIO_user_init.PORT_FUNC      = PORT_FUNC_ALTER;
+	
+	/*Rudder 1 timer 1 channel 1 & 2*/
+	GPIO_user_init.PORT_Pin       = (RUD1_CH1_PIN|RUD1_CH2_PIN|RUD1_CH1N_PIN|RUD1_CH2N_PIN);
+	GPIO_user_init.PORT_OE        = PORT_OE_OUT;
+	GPIO_user_init.PORT_FUNC      = RUD1_PORT_FUNC;
 	GPIO_user_init.PORT_SPEED     = PORT_SPEED_MAXFAST;
 	GPIO_user_init.PORT_MODE      = PORT_MODE_DIGITAL;	
-	PORT_Init(PWM_PORT, &GPIO_user_init);
-}
-//-----------------------------------------------------------------------
-void deinit_TIMER(MDR_TIMER_TypeDef *Timer){
-	/*Обнуление*/
-	Timer->CH1_CNTRL = 0x00000000;
-	Timer->CH2_CNTRL = 0x00000000;
-	Timer->CH3_CNTRL = 0x00000000;
-	Timer->CH4_CNTRL = 0x00000000;
-	Timer->CH1_CNTRL1 = 0x00000000;
-	Timer->CH2_CNTRL1 = 0x00000000;
-	Timer->CH3_CNTRL1 = 0x00000000;
-	Timer->CH4_CNTRL1 = 0x00000000;	
-	Timer->CH1_CNTRL2 = 0x00000000;
-	Timer->CH2_CNTRL2 = 0x00000000;
-	Timer->CH3_CNTRL2 = 0x00000000;
-	Timer->CH4_CNTRL2 = 0x00000000;	
-	Timer->STATUS = 0x00000000;
-	Timer->CNTRL = 0x00000000; // режим инициализации таймера
-	Timer->CNT = 0x00000000; // Начальное значение счетчика	
-}
-//-----------------------------------------------------------------------
-void init_TIMER1(){
-	/*Управление ШИМ*/
-	/*Обнуление*/
-	deinit_TIMER(MDR_TIMER1);
+	PORT_Init(RUD1_PWM_PORT, &GPIO_user_init);
 	
-	/*Тактирование таймеров*/
-	MDR_RST_CLK->PER_CLOCK |= (1 << 14 );
-	MDR_RST_CLK->TIM_CLOCK = (RST_CLK_TIM_CLOCK_TIM1_CLK_EN);
-	
-	/*Настройки таймера*/
-	MDR_TIMER1->PSG = T1PSG; // Предделитель частоты
-	MDR_TIMER1->ARR = T1ARR; // Основание счета (16 бит)
-	MDR_TIMER1->CNTRL = 0x00000042; //буферизация счет вверх и вниз
-	
-	/*Настройка каналов*/
-	MDR_TIMER1->CH1_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos); //формат сигнала 6: 1 если CNT<CCR
-  MDR_TIMER1->CH1_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos)| //выход всегда вкл., 2 на выход REF, 3 на выход DTG
-													 (1 << TIMER_CH_CNTRL1_NSELOE_Pos )|(3 << TIMER_CH_CNTRL1_NSELO_Pos);
-	MDR_TIMER1->CH1_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
-	MDR_TIMER1->CCR1 = T1ARR;	
-	
-	MDR_TIMER1->CH2_CNTRL = (6 << TIMER_CH_CNTRL_OCCM_Pos);
-  MDR_TIMER1->CH2_CNTRL1 = (1 << TIMER_CH_CNTRL1_SELOE_Pos )|(3 << TIMER_CH_CNTRL1_SELO_Pos)| //выход всегда вкл., 2 на выход REF, 3 на выход DTG
-													 (1 << TIMER_CH_CNTRL1_NSELOE_Pos )|(3 << TIMER_CH_CNTRL1_NSELO_Pos);
-	MDR_TIMER1->CH2_DTG = (0 << TIMER_CH_DTGX_Pos)|(0 << TIMER_CH_DTG_EDTS_Pos)|(DEADTIMECONST << TIMER_CH_DTG_Pos); //предделитель, частота от TIM_CLK, основной делитель
-	MDR_TIMER1->CCR2 = T1ARR;	
-	
-	/*Разрешения работы*/
-	MDR_TIMER1->CNTRL |= TIMER_CNTRL_CNT_EN; //включить таймер.	
-}
-//-----------------------------------------------------------------------
-void init_TIMER2(){
-	/*Обнуление*/
-	deinit_TIMER(MDR_TIMER2);
-	
-	/*Тактирование таймеров*/
-	MDR_RST_CLK->PER_CLOCK |= (1 << 15 );
-	MDR_RST_CLK->TIM_CLOCK = (RST_CLK_TIM_CLOCK_TIM2_CLK_EN);
-	
-	/*Настройки таймера*/
-	MDR_TIMER2->PSG = T2PSG; // Предделитель частоты
-	MDR_TIMER2->ARR = T2ARR; // Основание счета (16 бит)
-	MDR_TIMER2->CNTRL = 0x00000002; //буферизация
-	
-	/*Разрешения работы*/
-	MDR_TIMER2->IE = 0x00001102;		//прерывание по cnt=arr
-	NVIC_EnableIRQ(Timer2_IRQn); //разрешить прерывания таймера	
-	MDR_TIMER2->CNTRL |= TIMER_CNTRL_CNT_EN; //  включить таймер.	
+//	/*Rudder 2 timer 3 channel 3 & 4 */
+//	GPIO_user_init.PORT_Pin       = (RUD2_CH1_PIN|RUD2_CH2_PIN|RUD2_CH1N_PIN|RUD2_CH2N_PIN);
+//	GPIO_user_init.PORT_OE        = PORT_OE_OUT;
+//	GPIO_user_init.PORT_FUNC      = RUD2_PORT_FUNC;
+//	GPIO_user_init.PORT_SPEED     = PORT_SPEED_MAXFAST;
+//	GPIO_user_init.PORT_MODE      = PORT_MODE_DIGITAL;	
+//	PORT_Init(RUD2_PWM_PORT, &GPIO_user_init);
+//	
+//	/*Rudder 3 timer 3 channel 1 & 2*/
+//	GPIO_user_init.PORT_Pin       = (RUD3_CH1_PIN|RUD3_CH2_PIN|RUD3_CH1N_PIN|RUD3_CH2N_PIN);
+//	GPIO_user_init.PORT_OE        = PORT_OE_OUT;
+//	GPIO_user_init.PORT_FUNC      = RUD3_PORT_FUNC;
+//	GPIO_user_init.PORT_SPEED     = PORT_SPEED_MAXFAST;
+//	GPIO_user_init.PORT_MODE      = PORT_MODE_DIGITAL;	
+//	PORT_Init(RUD1_PWM_PORT, &GPIO_user_init);
+//	
+//	/*Rudder 4  timer 2 channel 1 & 3*/
+//	GPIO_user_init.PORT_Pin       = (RUD4_CH1_PIN|RUD4_CH2_PIN|RUD4_CH1N_PIN|RUD4_CH2N_PIN);
+//	GPIO_user_init.PORT_OE        = PORT_OE_OUT;
+//	GPIO_user_init.PORT_FUNC      = RUD4_PORT_FUNC;
+//	GPIO_user_init.PORT_SPEED     = PORT_SPEED_MAXFAST;
+//	GPIO_user_init.PORT_MODE      = PORT_MODE_DIGITAL;	
+//	PORT_Init(RUD1_PWM_PORT, &GPIO_user_init);
 }
 //-----------------------------------------------------------------------
 void init_ADC(void){
 	ADC_InitTypeDef ADC_InitStruct;
 	ADCx_InitTypeDef ADCx_InitStruct;
 	
+		RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTD, ENABLE);
+	RST_CLK_PCLKcmd(RST_CLK_PCLK_ADC, ENABLE);	
+	
 	ADC_DeInit();
   ADC_StructInit(&ADC_InitStruct);
   ADCx_StructInit(&ADCx_InitStruct);
-	
-//	ADC_InitStruct.ADC_StartDelay = 0x05;
 	
 	ADCx_InitStruct.ADC_SamplingMode = ADC_SAMPLING_MODE_SINGLE_CONV;/* режим многократного преобразования */
 	ADCx_InitStruct.ADC_ChannelNumber = ADC_OBJ_CHANNEL;/* выбор номера канала */
@@ -137,38 +100,29 @@ void init_ADC(void){
 	ADC1_Cmd(ENABLE);				//ВКЛЮЧИТЬ АЦП				
 }
 //-----------------------------------------------------------------------
-void init_PER(void){		
-	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTC, ENABLE);		
-	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTA, ENABLE);	
-	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTD, ENABLE);	
-	RST_CLK_PCLKcmd(RST_CLK_PCLK_ADC, ENABLE);
-	
-	/*Тактирование таймеров*/
-	MDR_RST_CLK->PER_CLOCK |= (1 << 14 )|(1 << 15 );
-	MDR_RST_CLK->TIM_CLOCK = (RST_CLK_TIM_CLOCK_TIM1_CLK_EN)|(RST_CLK_TIM_CLOCK_TIM2_CLK_EN);
-}
-//-----------------------------------------------------------------------
 uint16_t get_COM_angle(void){
 	return com_angle;
 }
 //-----------------------------------------------------------------------
-//void BRD_ADC1_RunSingle(uint32_t goEna)
-//	//same as ADC1_Start();
-//{
-//  if (goEna)
-//    MDR_ADC->ADC1_CFG |= ADC1_CFG_REG_GO;
-//  else
-//    MDR_ADC->ADC1_CFG &= ~ADC1_CFG_REG_GO;
-//}
-////-----------------------------------------------------------------------
-//void BRD_ADC1_RunSample(uint32_t sampleEna)
-//	//starts continuous conversion
-//{
-//  if (sampleEna)
-//    MDR_ADC->ADC1_CFG |= ADC1_CFG_REG_SAMPLE;
-//  else
-//    MDR_ADC->ADC1_CFG &= ~ADC1_CFG_REG_SAMPLE;
-//}
+#if defined(USE_DMA_FILTER)
+void BRD_ADC1_RunSingle(uint32_t goEna)
+	//same as ADC1_Start();
+{
+  if (goEna)
+    MDR_ADC->ADC1_CFG |= ADC1_CFG_REG_GO;
+  else
+    MDR_ADC->ADC1_CFG &= ~ADC1_CFG_REG_GO;
+}
+//-----------------------------------------------------------------------
+void BRD_ADC1_RunSample(uint32_t sampleEna)
+	//starts continuous conversion
+{
+  if (sampleEna)
+    MDR_ADC->ADC1_CFG |= ADC1_CFG_REG_SAMPLE;
+  else
+    MDR_ADC->ADC1_CFG &= ~ADC1_CFG_REG_SAMPLE;
+}
+#endif
 //-----------------------------------------------------------------------
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 	static uint16_t filter[BASIC_FILTER_SIZE][3];
@@ -185,7 +139,7 @@ uint16_t get_OBJ_angle(void){
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
 	#if defined (USE_BASIC_FILTER)&&!defined(USE_DMA_FILTER)
 		//run ADC
-	BRD_ADC1_RunSample(0); //0 = одиночное 1 = последовательное
+//	BRD_ADC1_RunSample(0); //0 = одиночное 1 = последовательное
 	ADC1_Start();
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
 	return filter_analog(ADC1_GetResult()&ADC_MASK, OBJ);
@@ -274,16 +228,18 @@ void control_loop(void){
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
 	changePWM(direction, mapped_ccr);	
 	
-	data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
-	data_to_send[1] = (timestamp_command_recieved&0xFFFFFFFF);
-	data_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
-	data_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
-	data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
-	data_to_send[5] = mapped_ccr;
-	data_to_send[6] = direction;
-	data_to_send[7] = TOK;
-	
-	send_data(amount_of_data_bites);
+	if (UART_RECIEVE_IN_PROGRESS_FLAG == RESET){
+		data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
+		data_to_send[1] = (timestamp_command_recieved&0xFFFFFFFF);
+		data_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
+		data_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
+		data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
+		data_to_send[5] = mapped_ccr;
+		data_to_send[6] = direction;
+		data_to_send[7] = TOK;
+		
+		send_data(amount_of_data_bites);
+	}
 }
 //-----------------------------------------------------------------------
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
@@ -299,13 +255,6 @@ void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
 	}	
 }
 //-----------------------------------------------------------------------
-void init_SysTick(){
-	SysTick->LOAD = 0x00FFFFFF; 
-	SysTick->CTRL = 0;
-	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk |SysTick_CTRL_TICKINT_Msk; //HCLK and Enable and interrupt enable
-	NVIC_EnableIRQ(SysTick_IRQn);
-}
-//-----------------------------------------------------------------------
 void reload_SysTick(){
 	SysTick->VAL = 1; //запись любого значения очищает регистр в 0, а также очищает COUNTFLAG в SysTick->CTRL
 	timestamp_overflow_counter = 0;
@@ -319,20 +268,22 @@ void take_timestamp(uint64_t* timestamp){
 void send_data(uint32_t Length){
 	//Отправляются данные о принятом сигнале и моменте принятия сигнала, о снятом сигнале с объекта управления и времени снятия сигнала
 	USB_CDC_SendData(&data_to_send, Length);
+//	RESET_DE_RO_KOSTIL_FLAG = 1;
+//	SEND_DATA_UART_DMA(&data_to_send[1], Length);	
+	
 }
 //-----------------------------------------------------------------------
 int main(){
 	init_CPU();
-//	init_USB();
-  init_PER();
+	init_USB();
 	init_GPIO();
 //	init_debug_LED();
 	#ifdef USE_DMA_FILTER
 	init_DMA();
 	#endif
 	init_ADC();
-	DMA_common_ini();
-	init_UART();
+//	DMA_common_ini();
+//	init_UART();
 	init_SysTick();
 	init_TIMER1();
 	init_TIMER2();

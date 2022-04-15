@@ -2,6 +2,7 @@
 
 
 uint32_t RESET_DE_RO_KOSTIL_FLAG = RESET;
+uint32_t UART_RECIEVE_IN_PROGRESS_FLAG = RESET;
 
 Protocol_parity_mode_type PROTOCOL_CURRENT_PARITY_MODE = MODE_ADRESS;
 Protocol_mode_type PROTOCOL_CURRENT_MODE = MODE_RECIEVE;
@@ -165,17 +166,17 @@ void USART_TX_DMA_ini(uint8_t* SourceBuffer, uint8_t Length)
 	NVIC_EnableIRQ(DMA_IRQn);
 }
 //-----------------------------------------------------------------------
-//void DMA_IRQHandler(void)
-//{	
-//	UART_DMACmd(MDR_UART2, UART_DMA_TXE, DISABLE);
-//	DMA_Cmd(DMA_Channel_UART2_TX, DISABLE);
-//	while(MDR_UART2->FR & UART_FR_BUSY);
-//	
-//	if (RESET_DE_RO_KOSTIL_FLAG)	//если надо переключиться на режим приема
-//	{
-//		Protocol_change_mode(MODE_RECIEVE);
-//	}
-//}
+void DMA_IRQHandler(void)
+{	
+	UART_DMACmd(UART485, UART_DMA_TXE, DISABLE);
+	DMA_Cmd(DMA_Channel_UART2_TX, DISABLE);
+	while(MDR_UART2->FR & UART_FR_BUSY);
+	
+	if (RESET_DE_RO_KOSTIL_FLAG)	//если надо переключиться на режим приема
+	{
+		Protocol_change_mode(MODE_RECIEVE);
+	}
+}
 //-----------------------------------------------------------------------
 
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
@@ -186,12 +187,29 @@ void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 //-----------------------------------------------------------------------
 
 void UART2_IRQHandler()
-{
-		
+{	
 	if (UART_GetITStatusMasked(MDR_UART2, UART_IT_RX) == SET){
     UART_ClearITPendingBit(MDR_UART2, UART_IT_RX);
 //		Protocol_recieve_message();
-		
+
+		// --- по упрощенной схеме ---
+		static uint8_t bytes_recieved = 0;
+		static uint8_t data_recieved[4];
+		uint8_t r;
+		static uint16_t res = 0;
+			
+		r = (uint8_t)UART_ReceiveData(MDR_UART2);
+		r = r - '0'; //превратить ASCII в uint
+		res = res*10 +r ;
+		data_recieved[bytes_recieved++] = res;
+		if (bytes_recieved>=4) 
+		{
+			com_angle = res;
+			bytes_recieved = 0;
+			res = 0;	
+			UART_RECIEVE_IN_PROGRESS_FLAG = RESET;
+		}		
+		if (bytes_recieved==1) UART_RECIEVE_IN_PROGRESS_FLAG = SET;
 		
 	}
 }
