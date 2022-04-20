@@ -5,12 +5,13 @@ uint16_t com_angle = 2250;
 uint64_t timestamp_command_recieved = 0;
 uint64_t timestamp_obj_recieved = 0;
 uint8_t timestamp_overflow_counter = 0;
-volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
+volatile uint8_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
+//volatile uint32_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
+//uint32_t amount_of_telemetry_bytes = TELEMETRY_DATA_BUFFER_SIZE * 4;
 #if defined(USE_DMA_FILTER) 
 uint32_t dmaCtrlStart;
 uint16_t data_dma[DMA_FILTER_SIZE];
 #endif
-uint8_t amount_of_data_bites = USB_DATA_BUFFER_SIZE * 4;
 //-----------------------------------------------------------------------
 void deinit_all_GPIO(void){
 	PORT_DeInit(MDR_PORTA);
@@ -227,24 +228,70 @@ void control_loop(void){
 	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, MAPNONINVERT);
 //	mapped_ccr = PWMpower *PWM_KOEF_USIL;
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
-	changePWM(direction, mapped_ccr);	
+	changePWM(!direction, mapped_ccr);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
 	
-	if (UART_RECIEVE_IN_PROGRESS_FLAG == RESET){
-		data_to_send[0] = (COM_angle<<16)|(OBJ_angle);
-		data_to_send[1] = (timestamp_command_recieved&0xFFFFFFFF);
-		data_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
-		data_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
-		data_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
-		data_to_send[5] = mapped_ccr;
-		data_to_send[6] = direction;
-		data_to_send[7] = TOK;
+//		telemetry_to_send[0] = (COM_angle<<16)|(OBJ_angle);
+//		telemetry_to_send[1] = (timestamp_command_recieved&0xFFFFFFFF);
+//		telemetry_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
+//		telemetry_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
+//		telemetry_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
+//		telemetry_to_send[5] = mapped_ccr;
+//		telemetry_to_send[6] = direction;
+//		telemetry_to_send[7] = TOK;
+//		send_telemetry(amount_of_telemetry_bytes);
+
+
+	static char d = 0;
+	d++; //делитель чтобы не так часто слал
+	if (d >10){
+		d  = 0;
+		telemetry_to_send[0] = COM_angle>>8;
+		telemetry_to_send[1] = COM_angle;
+		telemetry_to_send[2] = OBJ_angle>>8;
+		telemetry_to_send[3] = OBJ_angle;
 		
-		send_data(amount_of_data_bites);
+		telemetry_to_send[4] = timestamp_command_recieved>>56;
+		telemetry_to_send[5] = timestamp_command_recieved>>48;
+		telemetry_to_send[6] = timestamp_command_recieved>>40;
+		telemetry_to_send[7] = timestamp_command_recieved>>32;
+		
+		telemetry_to_send[8] = timestamp_command_recieved>>24;
+		telemetry_to_send[9] = timestamp_command_recieved>>16;
+		telemetry_to_send[10] = timestamp_command_recieved>>8;
+		telemetry_to_send[11] = timestamp_command_recieved;
+		
+		telemetry_to_send[12] = timestamp_obj_recieved>>56;
+		telemetry_to_send[13] = timestamp_obj_recieved>>48;
+		telemetry_to_send[14] = timestamp_obj_recieved>>40;
+		telemetry_to_send[15] = timestamp_obj_recieved>>32;
+		
+		telemetry_to_send[16] = timestamp_obj_recieved>>24;
+		telemetry_to_send[17] = timestamp_obj_recieved>>16;
+		telemetry_to_send[18] = timestamp_obj_recieved>>8;
+		telemetry_to_send[19] = timestamp_obj_recieved;
+		
+		telemetry_to_send[20] = mapped_ccr>>24;
+		telemetry_to_send[21] = mapped_ccr>>16;
+		telemetry_to_send[22] = mapped_ccr>>8;
+		telemetry_to_send[23] = mapped_ccr;
+		
+		telemetry_to_send[24] = 0;
+		telemetry_to_send[25] = 0;
+		telemetry_to_send[26] = 0;
+		telemetry_to_send[27] = direction;
+		
+		telemetry_to_send[28] = 0;
+		telemetry_to_send[29] = 0;
+		telemetry_to_send[30] = TOK>>8;
+		telemetry_to_send[31] = TOK;
+		
+		send_telemetry(TELEMETRY_DATA_BUFFER_SIZE);
 	}
+
 }
 //-----------------------------------------------------------------------
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
-	//поочередный (для него надо включать MAPNONINVERT и менять data_to_send[5])
+	//поочередный (для него надо включать MAPNONINVERT и менять telemetry_to_send[5])
 	switch (direction){
 		case PWMFORWARD:
 			MDR_TIMER1->CCR1 = (T1ARR>>1) + (mapped_ccr>>1);
@@ -266,11 +313,34 @@ void take_timestamp(uint64_t* timestamp){
 	if (timestamp_overflow_counter>0) *timestamp += timestamp_overflow_counter * 0x00FFFFFF;
 }
 //-----------------------------------------------------------------------
-void send_data(uint32_t Length){
+void send_telemetry(uint32_t Length){
 	//Отправляются данные о принятом сигнале и моменте принятия сигнала, о снятом сигнале с объекта управления и времени снятия сигнала
-	USB_CDC_SendData(&data_to_send, Length);
+//	USB_CDC_SendData(&telemetry_to_send, Length);
+//	
 //	RESET_DE_RO_KOSTIL_FLAG = 1;
-//	SEND_DATA_UART_DMA(&data_to_send[1], Length);	
+//	SEND_DATA_UART_DMA(&telemetry_to_send[0], Length);	
+	
+	/* Упрощенная посылка*/
+//	while (UART_RECIEVE_IN_PROGRESS_FLAG == SET){} // чтобы этот флаг мог работать в юарте должен быть выше приоритет чем в таймере
+	
+	PORT_SetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
+	
+	for (uint32_t i =0; i < Length; i++){
+		while (UART_GetFlagStatus (UART485, UART_FLAG_BUSY)== SET);
+		UART_SendData(UART485, telemetry_to_send[i]);
+	}
+	
+	while (UART_GetFlagStatus (UART485, UART_FLAG_BUSY)== SET);
+	PORT_ResetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
+	
+	// лучше не рисковать мкэй
+	// попытка итерировать по массиву 32 бита через поинтер 8бит
+//	uint8_t *p;
+//	for (p = telemetry_to_send; p<telemetry_to_send+amount_of_telemetry_bytes; p++){
+//		while (UART_GetFlagStatus (UART485, UART_FLAG_BUSY)== SET) {}
+//		UART_SendData(UART485, *p);
+//	}
+	
 	
 }
 //-----------------------------------------------------------------------
@@ -278,13 +348,13 @@ int main(){
 	init_CPU();
 	init_USB();
 	init_GPIO();
-//	init_debug_LED();
+	init_debug_LED();
 	#ifdef USE_DMA_FILTER
 	init_DMA();
 	#endif
 	init_ADC();
-//	DMA_common_ini();
-//	init_UART();
+	DMA_common_ini();
+	init_UART();
 	init_SysTick();
 	init_TIMER1();
 	init_TIMER2();

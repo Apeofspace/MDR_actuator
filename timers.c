@@ -58,24 +58,10 @@ void init_TIMER1(){
 }
 //-----------------------------------------------------------------------
 void init_TIMER2(){
-	/*Обнуление*/
-	deinit_TIMER(MDR_TIMER2);
-	
 	/*Тактирование таймеров*/
 	MDR_RST_CLK->PER_CLOCK |= RST_CLK_PCLK_TIMER2;
 	MDR_RST_CLK->TIM_CLOCK |= RST_CLK_TIM_CLOCK_TIM2_CLK_EN;
-//	
-//	/*Настройки таймера*/
-//	MDR_TIMER2->PSG = T2PSG; // Предделитель частоты
-//	MDR_TIMER2->ARR = T2ARR; // Основание счета (16 бит)
-//	MDR_TIMER1->CNTRL = TIMER_CNTRL_ARRB_EN;//включение буферизации
-//	
-//	/*Разрешения работы*/
-//	MDR_TIMER2->IE = 0x00001102;		//прерывание по cnt=arr  //********************TODO: ТУТ ЯВНО ЛИШНЕЕ? ДОСТАТОЧНО ПРОСТО 0x02 ?? прочекать когда подключу полено
-//																														//*******************	MDR_TIMER1->IE = TIMER_IE_CNT_ARR_EVENT_IE; //прерывание по cnt=arr
-//	NVIC_EnableIRQ(Timer2_IRQn); //разрешить прерывания таймера	
-//	MDR_TIMER2->CNTRL |= TIMER_CNTRL_CNT_EN; //  включить таймер.	
-	
+
 		/*Обнуление*/
 	deinit_TIMER(MDR_TIMER2);
 	

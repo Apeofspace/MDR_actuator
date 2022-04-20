@@ -24,18 +24,20 @@ void BRD_ADC1_RunSample(uint32_t sampleEna);
 #endif
 //-----------------------------------------------------------------------
 
-#define USB_DATA_BUFFER_SIZE 8 
+#define TELEMETRY_DATA_BUFFER_SIZE 32
+//#define TELEMETRY_DATA_BUFFER_SIZE 8 
+//extern uint32_t amount_of_telemetry_bytes;
 extern uint16_t com_angle;
 extern uint32_t T1CCR;
 extern uint64_t timestamp_command_recieved, timestamp_obj_recieved; //время, когда было получена команда, и время, когда была отработана команда
 extern uint8_t timestamp_overflow_counter;
-extern volatile uint32_t data_to_send[USB_DATA_BUFFER_SIZE];
+//extern volatile uint32_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
+extern volatile uint8_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
 typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
 typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
 typedef enum{MODE_ADRESS = UART_Parity_1, MODE_DATA = UART_Parity_0} Protocol_parity_mode_type;
 typedef enum{MODE_RECIEVE, MODE_SEND} Protocol_mode_type;
-extern uint8_t amount_of_data_bites;
 extern uint8_t UART_recieved_data_buffer[BUFFER_SIZE];
 extern uint32_t UART_recieved_data_length;
 extern Protocol_parity_mode_type PROTOCOL_CURRENT_PARITY_MODE; 
@@ -74,7 +76,7 @@ uint16_t get_COM_angle(void);
 uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel);
 void take_timestamp(uint64_t* timestamp);
 void reload_SysTick(void);
-void send_data(uint32_t Length);
+void send_telemetry(uint32_t Length);
 unsigned short CRC1(unsigned char * A, unsigned char * N);
 unsigned short CRC2(unsigned char * pcBlock, unsigned short len);
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length);
