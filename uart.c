@@ -2,7 +2,7 @@
 
 
 uint32_t RESET_DE_RO_KOSTIL_FLAG = RESET;
-uint32_t UART_RECIEVE_IN_PROGRESS_FLAG = RESET;
+//uint32_t UART_RECIEVE_IN_PROGRESS_FLAG = RESET;
 
 Protocol_parity_mode_type PROTOCOL_CURRENT_PARITY_MODE = MODE_ADRESS;
 Protocol_mode_type PROTOCOL_CURRENT_MODE = MODE_RECIEVE;
@@ -71,7 +71,7 @@ void init_UART(){
 	 // Создание структуры UART_StructInit c дефолтными параметрами
 	UART_StructInit(&UART_InitStruct);
 	UART_InitStruct.UART_WordLength = UART_WordLength8b;
-	UART_InitStruct.UART_Parity = UART_Parity_1;
+	UART_InitStruct.UART_Parity = UART_Parity_No;
 	UART_InitStruct.UART_BaudRate = UART485_BAUD_RATE;
 	
 	 // Инициализация модуля UART
@@ -86,57 +86,6 @@ void init_UART(){
 
   // Разрешение работы модуля UART
   UART_Cmd (UART485, ENABLE);
-//	UART_InitTypeDef UART_InitStruct;
-//	PORT_InitTypeDef GPIOInitStruct;
-//	
-//	 // Включение тактирования
-//	RST_CLK_PCLKcmd(RST_CLK_PCLK_UART2, ENABLE);
-//	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTF, ENABLE);
-//	
-//	//инициализация структуры
-//	GPIOInitStruct.PORT_PULL_UP   = PORT_PULL_UP_OFF;
-//	GPIOInitStruct.PORT_PULL_DOWN = PORT_PULL_DOWN_OFF;
-//	GPIOInitStruct.PORT_PD_SHM    = PORT_PD_SHM_OFF;
-//	GPIOInitStruct.PORT_PD        = PORT_PD_DRIVER;
-//	GPIOInitStruct.PORT_GFEN      = PORT_GFEN_OFF;
-//	GPIOInitStruct.PORT_SPEED     = PORT_SPEED_MAXFAST;
-//	GPIOInitStruct.PORT_MODE      = PORT_MODE_DIGITAL;	
-//		
-//	 // Конфигурация и инициализация линии для приема данных 
-//	GPIOInitStruct.PORT_FUNC  = DEBUG_UART_PINS_FUNCTION;
-//  GPIOInitStruct.PORT_Pin   = DEBUG_UART_PINS;
-//  PORT_Init (DEBUG_UART_PORT, &GPIOInitStruct);
-
-//  // Конфигурация и инициализация линии для передачи данных 
-//  GPIOInitStruct.PORT_FUNC  = PORT_FUNC_OVERRID;	
-//  GPIOInitStruct.PORT_OE    = PORT_OE_OUT;
-//  GPIOInitStruct.PORT_Pin   = PORT_Pin_1;
-//  PORT_Init (DEBUG_UART_PORT, &GPIOInitStruct);
-//	
-//	// Конфигурация и инициализация ноги для дрыганья режимом прием/передача
-//  GPIOInitStruct.PORT_FUNC  = PORT_FUNC_PORT;	
-//  GPIOInitStruct.PORT_OE    = PORT_OE_OUT;
-//  GPIOInitStruct.PORT_Pin   = RS485_DE_RE_PIN;
-//  PORT_Init (RS485_DE_RE_PORT, &GPIOInitStruct);
-//	
-//	 // Создание структуры UART_StructInit c дефолтными параметрами
-//	UART_StructInit(&UART_InitStruct);
-//	UART_InitStruct.UART_WordLength = UART_WordLength8b;
-//	UART_InitStruct.UART_Parity = UART_Parity_1;
-//	UART_InitStruct.UART_BaudRate = 1250000;
-//	
-//	 // Инициализация модуля UART
-//	UART_Init(DEBUG_UART, &UART_InitStruct);
-//	
-//	 // Выбор предделителя тактовой частоты модуля UART
-//  UART_BRGInit (DEBUG_UART, UART_HCLKdiv1);
-//	
-//	// Выбор источников прерываний (прием и передача данных)
-//  UART_ITConfig (DEBUG_UART, UART_IT_RX, ENABLE);
-//	NVIC_EnableIRQ(UART2_IRQn);
-
-//  // Разрешение работы модуля UART
-//  UART_Cmd (DEBUG_UART, ENABLE);
 }
 
 //-----------------------------------------------------------------------
@@ -188,29 +137,49 @@ void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 
 void UART2_IRQHandler()
 {	
+	uint16_t recieved_byte;
 	if (UART_GetITStatusMasked(MDR_UART2, UART_IT_RX) == SET){
-    UART_ClearITPendingBit(MDR_UART2, UART_IT_RX);
-//		Protocol_recieve_message();
 
-		// --- по упрощенной схеме ---
-		static uint8_t bytes_recieved = 0;
-		static uint8_t data_recieved[4];
-		uint8_t r;
-		static uint16_t res = 0;
-			
-		r = (uint8_t)UART_ReceiveData(MDR_UART2);
-		r = r - '0'; //превратить ASCII в uint
-		res = res*10 +r ;
-		data_recieved[bytes_recieved++] = res;
-		if (bytes_recieved>=4) 
+		recieved_byte = UART_ReceiveData(MDR_UART2);
+
+		// check for errors
+		if ((recieved_byte>>8)>0)
 		{
-			com_angle = res;
-			bytes_recieved = 0;
-			res = 0;	
-			UART_RECIEVE_IN_PROGRESS_FLAG = RESET;
-		}		
-		if (bytes_recieved==1) UART_RECIEVE_IN_PROGRESS_FLAG = SET;
+			//errors found
+			UART_recieved_data_length = 0;
+			return;
+		}
+
+		UART_recieved_data_buffer[UART_recieved_data_length++] = (uint8_t) recieved_byte;
+//		
+		//check header
+		if (UART_recieved_data_length == 2)
+		{
+			if ((UART_recieved_data_buffer[0] != 0xAB)||(UART_recieved_data_buffer[1] != 0xCD))
+			{
+				//wrong header
+				UART_recieved_data_length = 0;
+				return;
+			}
+		}
 		
+		//check ending
+		if (UART_recieved_data_length == 6)
+		{
+			if ((UART_recieved_data_buffer[4] != 0xEF)||(UART_recieved_data_buffer[5] != 0xEF))
+			{
+				//wrong ending
+				UART_recieved_data_length = 0;
+				return;
+			}
+			else
+			{
+				//correct message
+			}
+		}
+//		telemetry_to_send[0] = (uint8_t)UART_ReceiveData(MDR_UART2);
+//		send_telemetry(1);
+		UART_ClearITPendingBit(MDR_UART2, UART_IT_RX);
 	}
 }
 //-----------------------------------------------------------------------
@@ -316,7 +285,7 @@ int Protocol_check_parity(uint16_t* recieved_byte){
 void Protocol_UART_message_recieved_callback(uint8_t* Buffer){
 	//тут могут быть серьезные проблемы, так как буффер это статическая глобальная переменная. она может быть изменена при приему нового
 	//сообщения до того как я прочитаю данные. 	
-	flip_LED(MDR_PORTE, PORT_Pin_7);
+//	flip_LED(MDR_PORTE, PORT_Pin_7);
 	
 	uint16_t data_ch1;
 	data_ch1 = (Buffer[3]<<8UL) | Buffer[4];

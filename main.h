@@ -24,15 +24,15 @@ void BRD_ADC1_RunSample(uint32_t sampleEna);
 #endif
 //-----------------------------------------------------------------------
 
-#define TELEMETRY_DATA_BUFFER_SIZE 32
+#define TELEMETRY_DATA_BUFFER_SIZE 27
 //#define TELEMETRY_DATA_BUFFER_SIZE 8 
 //extern uint32_t amount_of_telemetry_bytes;
 extern uint16_t com_angle;
 extern uint32_t T1CCR;
 extern uint64_t timestamp_command_recieved, timestamp_obj_recieved; //время, когда было получена команда, и время, когда была отработана команда
 extern uint8_t timestamp_overflow_counter;
-//extern volatile uint32_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
-extern volatile uint8_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
+//extern uint32_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
+extern uint8_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
 typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
 typedef enum {COM = 1, OBJ = 0} SIGNAL_CHANNEL;
@@ -46,7 +46,7 @@ extern uint32_t RESET_DE_RO_KOSTIL_FLAG;
 extern DMA_ChannelInitTypeDef DMA_InitStr_TX;
 extern DMA_CtrlDataInitTypeDef DMA_PriCtrlStr_TX;
 
-extern uint32_t UART_RECIEVE_IN_PROGRESS_FLAG;
+//extern uint32_t UART_RECIEVE_IN_PROGRESS_FLAG;
 
 /*Inits*/
 void init_CPU(void);

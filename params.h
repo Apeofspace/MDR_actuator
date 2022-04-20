@@ -9,7 +9,7 @@
 #define T1PSG 0
 #define T1ARR 3999
 #define T2PSG 79
-#define T2ARR 499
+#define T2ARR 999
 #define DEADTIMECONST 400  //ѕри 80м√ц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
 #define PWMDEADZONE 0.005  //зона нечувстсвительности
 #define PWM_KOEF_USIL 12 //коэффициент усилени€
@@ -61,7 +61,7 @@
 #define UART485_PORT MDR_PORTF
 #define UART485_PINS (PORT_Pin_0 | PORT_Pin_1)
 #define UART485_PINS_FUNCTION PORT_FUNC_OVERRID
-#define UART485_BAUD_RATE 500000
+#define UART485_BAUD_RATE 115200
 //#define RS485_DE_RE_PIN (PORT_Pin_2|PORT_Pin_3)
 #define RS485_DE_RE_PIN PORT_Pin_2
 #define RS485_DE_RE_PORT MDR_PORTF
