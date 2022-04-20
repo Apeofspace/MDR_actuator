@@ -83,7 +83,7 @@ void init_ADC(void){
 	ADC_InitTypeDef ADC_InitStruct;
 	ADCx_InitTypeDef ADCx_InitStruct;
 	
-		RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTD, ENABLE);
+	RST_CLK_PCLKcmd(RST_CLK_PCLK_PORTD, ENABLE);
 	RST_CLK_PCLKcmd(RST_CLK_PCLK_ADC, ENABLE);	
 	
 	ADC_DeInit();
@@ -134,6 +134,7 @@ uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
 	for (uint8_t i = 0; i < BASIC_FILTER_SIZE; i++) sum += filter[i][channel]; 
 	return(sum/BASIC_FILTER_SIZE);	
 }
+
 //-----------------------------------------------------------------------
 uint16_t get_OBJ_angle(void){
 	ADC1_SetChannel(ADC_OBJ_CHANNEL);
