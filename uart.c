@@ -152,16 +152,16 @@ void UART2_IRQHandler()
 
 		UART_recieved_data_buffer[UART_recieved_data_length++] = (uint8_t) recieved_byte;
 //		
-		//check header
-		if (UART_recieved_data_length == 2)
-		{
-			if ((UART_recieved_data_buffer[0] != 0xAB)||(UART_recieved_data_buffer[1] != 0xCD))
-			{
-				//wrong header
-				UART_recieved_data_length = 0;
-				return;
-			}
-		}
+//		//check header
+//		if (UART_recieved_data_length == 2)
+//		{
+//			if ((UART_recieved_data_buffer[0] != 0xAB)||(UART_recieved_data_buffer[1] != 0xCD))
+//			{
+//				//wrong header
+//				UART_recieved_data_length = 0;
+//				return;
+//			}
+//		}
 		
 		//check ending
 		if (UART_recieved_data_length == 6)
@@ -177,8 +177,6 @@ void UART2_IRQHandler()
 				//correct message
 			}
 		}
-//		telemetry_to_send[0] = (uint8_t)UART_ReceiveData(MDR_UART2);
-//		send_telemetry(1);
 		UART_ClearITPendingBit(MDR_UART2, UART_IT_RX);
 	}
 }

@@ -276,7 +276,6 @@ void control_loop(void){
 	PWMpower = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;
 	PWM_DIRECTION direction = (OBJ_angle>COM_angle)? PWMBACKWARD : PWMFORWARD;
 	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, MAPNONINVERT);
-//	mapped_ccr = PWMpower *PWM_KOEF_USIL;
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
 	changePWM(!direction, mapped_ccr);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
 //	
@@ -289,57 +288,10 @@ void control_loop(void){
 //		telemetry_to_send[6] = direction;
 //		telemetry_to_send[7] = TOK;
 //		send_telemetry(TELEMETRY_DATA_BUFFER_SIZE);
-
-
-//	static char d = 0;
-//	d++; //делитель чтобы не так часто слал
-//	if (d >5){
-//		d  = 0;
-//		telemetry_to_send[0] = COM_angle>>8;
-//		telemetry_to_send[1] = COM_angle;
-//		telemetry_to_send[2] = OBJ_angle>>8;
-//		telemetry_to_send[3] = OBJ_angle;
-//		
-//		telemetry_to_send[4] = timestamp_command_recieved>>56;
-//		telemetry_to_send[5] = timestamp_command_recieved>>48;
-//		telemetry_to_send[6] = timestamp_command_recieved>>40;
-//		telemetry_to_send[7] = timestamp_command_recieved>>32;
-//		
-//		telemetry_to_send[8] = timestamp_command_recieved>>24;
-//		telemetry_to_send[9] = timestamp_command_recieved>>16;
-//		telemetry_to_send[10] = timestamp_command_recieved>>8;
-//		telemetry_to_send[11] = timestamp_command_recieved;
-//		
-//		telemetry_to_send[12] = timestamp_obj_recieved>>56;
-//		telemetry_to_send[13] = timestamp_obj_recieved>>48;
-//		telemetry_to_send[14] = timestamp_obj_recieved>>40;
-//		telemetry_to_send[15] = timestamp_obj_recieved>>32;
-//		
-//		telemetry_to_send[16] = timestamp_obj_recieved>>24;
-//		telemetry_to_send[17] = timestamp_obj_recieved>>16;
-//		telemetry_to_send[18] = timestamp_obj_recieved>>8;
-//		telemetry_to_send[19] = timestamp_obj_recieved;
-//		
-//		telemetry_to_send[20] = mapped_ccr>>24;
-//		telemetry_to_send[21] = mapped_ccr>>16;
-//		telemetry_to_send[22] = mapped_ccr>>8;
-//		telemetry_to_send[23] = mapped_ccr;
-//		
-//		telemetry_to_send[24] = 0;
-//		telemetry_to_send[25] = 0;
-//		telemetry_to_send[26] = 0;
-//		telemetry_to_send[27] = direction;
-//		
-//		telemetry_to_send[28] = 0;
-//		telemetry_to_send[29] = 0;
-//		telemetry_to_send[30] = TOK>>8;
-//		telemetry_to_send[31] = TOK;
-//		
-//		send_telemetry(TELEMETRY_DATA_BUFFER_SIZE);
 	 
 	static char d = 0;
 	d++; //делитель чтобы не так часто слал
-	if (d >5){
+	if (d > 5){
 		d  = 0;
 		telemetry_to_send[0] = OBJ_angle;
 		telemetry_to_send[1] = OBJ_angle>>8;
@@ -413,17 +365,6 @@ void send_telemetry(uint32_t Length){
 	
 	while (UART_GetFlagStatus (UART485, UART_FLAG_BUSY)== SET);
 	PORT_ResetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
-	
-	
-//	PORT_SetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
-//	// неудачная попытка итерировать по массиву 32 бита через поинтер 8бит
-//	uint8_t *p;
-//	for (p = telemetry_to_send; p<telemetry_to_send+Length; p++){
-//		while (UART_GetFlagStatus (UART485, UART_FLAG_BUSY)== SET) {}
-//		UART_SendData(UART485, *p);
-//	}	
-//	while (UART_GetFlagStatus (UART485, UART_FLAG_BUSY)== SET);
-//	PORT_ResetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
 }
 //-----------------------------------------------------------------------
 int main(){
