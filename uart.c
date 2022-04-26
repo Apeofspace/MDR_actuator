@@ -121,16 +121,18 @@ void DMA_IRQHandler(void)
 	DMA_Cmd(DMA_Channel_UART2_TX, DISABLE);
 	while(MDR_UART2->FR & UART_FR_BUSY);
 	
-	if (RESET_DE_RO_KOSTIL_FLAG)	//если надо переключиться на режим приема
-	{
-		Protocol_change_mode(MODE_RECIEVE);
-	}
+//	if (RESET_DE_RO_KOSTIL_FLAG)	//если надо переключиться на режим приема
+//	{
+//		Protocol_change_mode(MODE_RECIEVE);
+//	}
+	PORT_ResetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
 }
 //-----------------------------------------------------------------------
 
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 {
-	Protocol_change_mode(MODE_SEND);	
+//	Protocol_change_mode(MODE_SEND);	
+	PORT_SetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
 	USART_TX_DMA_ini(data_buffer, length);
 }
 //-----------------------------------------------------------------------
@@ -164,7 +166,7 @@ void UART2_IRQHandler()
 //		}
 		
 		//check ending
-		if (UART_recieved_data_length == 6)
+		if (UART_recieved_data_length >= 6)
 		{
 			if ((UART_recieved_data_buffer[4] != 0xEF)||(UART_recieved_data_buffer[5] != 0xEF))
 			{

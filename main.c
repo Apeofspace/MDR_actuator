@@ -132,23 +132,22 @@ uint16_t get_COM_angle(void){
 
 	if (UART_recieved_data_length >= 6)
 	{
-//		com_angle = (UART_recieved_data_buffer[2]<<8)|UART_recieved_data_buffer[3]); //нет ли здесь тупецкого косяка изза того что буфер 8 бит?
 		com_angle = UART_recieved_data_buffer[2];
 		com_angle = (com_angle<<8)|UART_recieved_data_buffer[3];
 		UART_recieved_data_length = 0;
 		
-//		telemetry_to_send[0] = com_angle>>8;
-//		telemetry_to_send[1] = (uint8_t)com_angle;
-//		send_telemetry(2);
 	}
-//	else if (UART_recieved_data_length>0)
-//	{
-//		timeout++;
-//		if (timeout > 100)
-//		{
-//			timeout = 0;
-//			UART_recieved_data_length = 0;
-//		}
+//	else
+//	{		
+//			if (UART_recieved_data_length>0)
+//				{
+//					timeout++;
+//					if (timeout > 100)
+//					{
+//						timeout = 0;
+//						UART_recieved_data_length = 0;
+//					}
+//				}
 //	}
 	return com_angle;
 	
@@ -291,7 +290,7 @@ void control_loop(void){
 	 
 	static char d = 0;
 	d++; //делитель чтобы не так часто слал
-	if (d > 5){
+	if (d > 19){
 		d  = 0;
 		telemetry_to_send[0] = OBJ_angle;
 		telemetry_to_send[1] = OBJ_angle>>8;
@@ -327,7 +326,9 @@ void control_loop(void){
 		telemetry_to_send[25] = TOK;
 		telemetry_to_send[26] = TOK>>8;
 		
-		send_telemetry(TELEMETRY_DATA_BUFFER_SIZE);
+//		send_telemetry(TELEMETRY_DATA_BUFFER_SIZE);
+		RESET_DE_RO_KOSTIL_FLAG = 1;
+		SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
 	}
 }
 //-----------------------------------------------------------------------
