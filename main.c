@@ -102,55 +102,7 @@ void init_ADC(void){
 }
 //-----------------------------------------------------------------------
 uint16_t get_COM_angle(void){
-
-	static uint32_t timeout = 0;
-//////	uint16_t res = 0;
-//////	
-//////	if (UART_recieved_data_length >= 4)
-//////	{
-//////		for (uint32_t j = 0; j<UART_recieved_data_length; j++)
-//////		{
-//////			UART_recieved_data_buffer[j] = UART_recieved_data_buffer[j] - '0';//превратить ASCII в uint
-//////			res = res*10 + UART_recieved_data_buffer[j];
-//////		}		
-//////		com_angle = res;
-//////		UART_recieved_data_length = 0;
-//////		res = 0;		
-//////		
-//////	}
-//////	else if (UART_recieved_data_length>0)
-//////	{
-//////		timeout++;
-//////		if (timeout > 10)
-//////		{
-//////			timeout = 0;
-//////			UART_recieved_data_length = 0;
-//////		}
-//////	}
-//////	return com_angle;
-
-
-	if (UART_recieved_data_length >= 6)
-	{
-		com_angle = UART_recieved_data_buffer[2];
-		com_angle = (com_angle<<8)|UART_recieved_data_buffer[3];
-		UART_recieved_data_length = 0;
-		
-	}
-//	else
-//	{		
-//			if (UART_recieved_data_length>0)
-//				{
-//					timeout++;
-//					if (timeout > 100)
-//					{
-//						timeout = 0;
-//						UART_recieved_data_length = 0;
-//					}
-//				}
-//	}
-	return com_angle;
-	
+	return com_angle;	
 }
 
 //-----------------------------------------------------------------------
@@ -277,16 +229,6 @@ void control_loop(void){
 	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, MAPNONINVERT);
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
 	changePWM(!direction, mapped_ccr);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
-//	
-//		telemetry_to_send[0] = (COM_angle<<16)|(OBJ_angle);
-//		telemetry_to_send[1] = (timestamp_command_recieved&0xFFFFFFFF);
-//		telemetry_to_send[2] = (timestamp_command_recieved>>32)&0xFFFFFFFF;
-//		telemetry_to_send[3] = (timestamp_obj_recieved&0xFFFFFFFF);
-//		telemetry_to_send[4] = (timestamp_obj_recieved>>32)&0xFFFFFFFF;
-//		telemetry_to_send[5] = mapped_ccr;
-//		telemetry_to_send[6] = direction;
-//		telemetry_to_send[7] = TOK;
-//		send_telemetry(TELEMETRY_DATA_BUFFER_SIZE);
 	 
 	static char d = 0;
 	d++; //делитель чтобы не так часто слал
@@ -368,6 +310,28 @@ void send_telemetry(uint32_t Length){
 	PORT_ResetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
 }
 //-----------------------------------------------------------------------
+void UART_message_parsing(){
+	uint16_t res;
+	static uint16_t uart_timeout = 0;
+	if (UART_GetFlagStatus (MDR_UART2, UART_FLAG_RXFF)== SET)
+	{
+		uart_timeout = 0;
+		UART_recieved_data_buffer[UART_recieved_data_length++] = (uint8_t) UART_ReceiveData(MDR_UART2);
+		if (UART_recieved_data_length >= 6)
+		{
+			res = UART_recieved_data_buffer[2];
+			res = (res<<8)|UART_recieved_data_buffer[3];
+			com_angle = res;
+			UART_recieved_data_length=0;
+		}
+	}
+	else
+	{
+		if (uart_timeout< 1200) uart_timeout++;
+		else UART_recieved_data_length = 0;
+	}
+}
+//-----------------------------------------------------------------------
 int main(){
 	init_CPU();
 //	init_USB();
@@ -384,5 +348,7 @@ int main(){
 	init_TIMER2();
 	
 
-	while (1){}
+	while (1){
+		UART_message_parsing();
+	}
 }

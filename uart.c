@@ -81,8 +81,8 @@ void init_UART(){
   UART_BRGInit (UART485, UART_HCLKdiv1);
 	
 	// ¬ыбор источников прерываний (прием и передача данных)
-  UART_ITConfig (UART485, UART_IT_RX, ENABLE);
-	NVIC_EnableIRQ(UART2_IRQn);
+//  UART_ITConfig (UART485, UART_IT_RX, ENABLE);
+//	NVIC_EnableIRQ(UART2_IRQn);
 
   // –азрешение работы модул€ UART
   UART_Cmd (UART485, ENABLE);

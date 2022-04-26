@@ -64,7 +64,7 @@ void init_UART(void);
 void DMA_common_ini(void);
 void USART_TX_DMA_ini(uint8_t* SourceBuffer, uint8_t Length);
 void init_debug_LED(void);
-
+void UART_message_parsing(void);
 
 /*Functions*/
 uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert);
