@@ -65,8 +65,8 @@ void init_UART(){
 	// Конфигурация и инициализация ноги для дрыганья режимом прием/передача
   GPIOInitStruct.PORT_FUNC  = PORT_FUNC_PORT;	
   GPIOInitStruct.PORT_OE    = PORT_OE_OUT;
-  GPIOInitStruct.PORT_Pin   = RS485_DE_RE_PIN;
-  PORT_Init (RS485_DE_RE_PORT, &GPIOInitStruct);
+  GPIOInitStruct.PORT_Pin   = RS485_DE_RO_PIN;
+  PORT_Init (RS485_DE_RO_PORT, &GPIOInitStruct);
 	
 	 // Создание структуры UART_StructInit c дефолтными параметрами
 	UART_StructInit(&UART_InitStruct);
@@ -125,14 +125,16 @@ void DMA_IRQHandler(void)
 //	{
 //		Protocol_change_mode(MODE_RECIEVE);
 //	}
-	PORT_ResetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
+	sending_telemetry_flag = RESET;
+	PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 }
 //-----------------------------------------------------------------------
 
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 {
 //	Protocol_change_mode(MODE_SEND);	
-	PORT_SetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
+			for (int j = 0; j < 1000; j++){}
+	PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 	USART_TX_DMA_ini(data_buffer, length);
 }
 //-----------------------------------------------------------------------
@@ -259,10 +261,10 @@ void Protocol_change_parity_mode(Protocol_parity_mode_type mode){
 //-----------------------------------------------------------------------
 void Protocol_change_mode(Protocol_mode_type mode){
 	if (mode == MODE_SEND) {
-		PORT_SetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
+		PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 	}
 	else {
-		PORT_ResetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
+		PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 		Protocol_change_parity_mode(MODE_ADRESS);
 	}
 	PROTOCOL_CURRENT_MODE = mode;

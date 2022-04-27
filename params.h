@@ -13,11 +13,13 @@
 #define DEADTIMECONST 400  //ѕри 80м√ц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
 #define PWMDEADZONE 0.0025  //зона нечувстсвительности
 #define PWM_KOEF_USIL 20 //коэффициент усилени€
-#define COM_LIMIT_LEFT 1000 //чтобы не билось об кра€
-#define COM_LIMIT_RIGHT 3500
+#define COM_LIMIT_LEFT 800 //чтобы не билось об кра€
+#define COM_LIMIT_RIGHT 3800
 #define BUFFER_SIZE 50
 #define OWN_ADRESS 0x01
 #define TARGET_ADRESS 0x01
+
+#define UART_TIMEOUT 1200
 
 
 //-----------------------------------------------------------------------
@@ -61,8 +63,8 @@
 #define UART485_PORT MDR_PORTF
 #define UART485_PINS (PORT_Pin_0 | PORT_Pin_1)
 #define UART485_PINS_FUNCTION PORT_FUNC_OVERRID
+//#define RS485_DE_RO_PIN (PORT_Pin_2|PORT_Pin_3)
+#define RS485_DE_RO_PIN PORT_Pin_2
+#define RS485_DE_RO_PORT MDR_PORTF
 #define UART485_BAUD_RATE 115200
-//#define RS485_DE_RE_PIN (PORT_Pin_2|PORT_Pin_3)
-#define RS485_DE_RE_PIN PORT_Pin_2
-#define RS485_DE_RE_PORT MDR_PORTF
 //-----------------------------------------------------------------------

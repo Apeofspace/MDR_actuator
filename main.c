@@ -8,6 +8,13 @@ uint8_t timestamp_overflow_counter = 0;
 uint8_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
 //uint32_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
 //uint32_t amount_of_telemetry_bytes = TELEMETRY_DATA_BUFFER_SIZE * 4;
+
+uint8_t can_send_telemetry_flag = RESET;
+uint8_t sending_telemetry_flag = RESET;
+uint8_t recieving_data_flag = RESET;
+uint8_t uart_package_recieved_flag = RESET;
+
+
 #if defined(USE_DMA_FILTER) 
 uint32_t dmaCtrlStart;
 uint16_t data_dma[DMA_FILTER_SIZE];
@@ -234,43 +241,47 @@ void control_loop(void){
 	d++; //делитель чтобы не так часто слал
 	if (d > 19){
 		d  = 0;
-		telemetry_to_send[0] = OBJ_angle;
-		telemetry_to_send[1] = OBJ_angle>>8;
-		telemetry_to_send[2] = COM_angle;
-		telemetry_to_send[3] = COM_angle>>8;
-		
-		telemetry_to_send[4] = timestamp_command_recieved;
-		telemetry_to_send[5] = timestamp_command_recieved>>8;
-		telemetry_to_send[6] = timestamp_command_recieved>>16;
-		telemetry_to_send[7] = timestamp_command_recieved>>24;
-		
-		telemetry_to_send[8] = timestamp_command_recieved>>32;
-		telemetry_to_send[9] = timestamp_command_recieved>>40;
-		telemetry_to_send[10] = timestamp_command_recieved>>48;
-		telemetry_to_send[11] = timestamp_command_recieved>>56;
-		
-		telemetry_to_send[12] = timestamp_obj_recieved;
-		telemetry_to_send[13] = timestamp_obj_recieved>>8;
-		telemetry_to_send[14] = timestamp_obj_recieved>>16;
-		telemetry_to_send[15] = timestamp_obj_recieved>>24;
-		
-		telemetry_to_send[16] = timestamp_obj_recieved>>32;
-		telemetry_to_send[17] = timestamp_obj_recieved>>40;
-		telemetry_to_send[18] = timestamp_obj_recieved>>48;
-		telemetry_to_send[19] = timestamp_obj_recieved>>56;
-		
-		telemetry_to_send[20] = mapped_ccr;
-		telemetry_to_send[21] = mapped_ccr>>8;
-		telemetry_to_send[22] = mapped_ccr>>16;
-		telemetry_to_send[23] = mapped_ccr>>24;
-		
-		telemetry_to_send[24] = direction;
-		telemetry_to_send[25] = TOK;
-		telemetry_to_send[26] = TOK>>8;
+		if (sending_telemetry_flag == RESET){
+			telemetry_to_send[0] = OBJ_angle;
+			telemetry_to_send[1] = OBJ_angle>>8;
+			telemetry_to_send[2] = COM_angle;
+			telemetry_to_send[3] = COM_angle>>8;
+			
+			telemetry_to_send[4] = timestamp_command_recieved;
+			telemetry_to_send[5] = timestamp_command_recieved>>8;
+			telemetry_to_send[6] = timestamp_command_recieved>>16;
+			telemetry_to_send[7] = timestamp_command_recieved>>24;
+			
+			telemetry_to_send[8] = timestamp_command_recieved>>32;
+			telemetry_to_send[9] = timestamp_command_recieved>>40;
+			telemetry_to_send[10] = timestamp_command_recieved>>48;
+			telemetry_to_send[11] = timestamp_command_recieved>>56;
+			
+			telemetry_to_send[12] = timestamp_obj_recieved;
+			telemetry_to_send[13] = timestamp_obj_recieved>>8;
+			telemetry_to_send[14] = timestamp_obj_recieved>>16;
+			telemetry_to_send[15] = timestamp_obj_recieved>>24;
+			
+			telemetry_to_send[16] = timestamp_obj_recieved>>32;
+			telemetry_to_send[17] = timestamp_obj_recieved>>40;
+			telemetry_to_send[18] = timestamp_obj_recieved>>48;
+			telemetry_to_send[19] = timestamp_obj_recieved>>56;
+			
+			telemetry_to_send[20] = mapped_ccr;
+			telemetry_to_send[21] = mapped_ccr>>8;
+			telemetry_to_send[22] = mapped_ccr>>16;
+			telemetry_to_send[23] = mapped_ccr>>24;
+			
+			telemetry_to_send[24] = direction;
+			telemetry_to_send[25] = TOK;
+			telemetry_to_send[26] = TOK>>8;
+			
+			can_send_telemetry_flag = SET;
+	}
 		
 //		send_telemetry(TELEMETRY_DATA_BUFFER_SIZE);
-		RESET_DE_RO_KOSTIL_FLAG = 1;
-		SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
+//		RESET_DE_RO_KOSTIL_FLAG = 1;
+//		SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
 	}
 }
 //-----------------------------------------------------------------------
@@ -299,7 +310,7 @@ void take_timestamp(uint64_t* timestamp){
 //-----------------------------------------------------------------------
 void send_telemetry(uint32_t Length){
 
-	PORT_SetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
+	PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 	
 	for (uint32_t i =0; i < Length; i++){
 		while (UART_GetFlagStatus (UART485, UART_FLAG_BUSY)== SET);
@@ -307,7 +318,7 @@ void send_telemetry(uint32_t Length){
 	}
 	
 	while (UART_GetFlagStatus (UART485, UART_FLAG_BUSY)== SET);
-	PORT_ResetBits(RS485_DE_RE_PORT, RS485_DE_RE_PIN);
+	PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 }
 //-----------------------------------------------------------------------
 void UART_message_parsing(){
@@ -315,20 +326,48 @@ void UART_message_parsing(){
 	static uint16_t uart_timeout = 0;
 	if (UART_GetFlagStatus (MDR_UART2, UART_FLAG_RXFF)== SET)
 	{
+		recieving_data_flag = SET;
 		uart_timeout = 0;
 		UART_recieved_data_buffer[UART_recieved_data_length++] = (uint8_t) UART_ReceiveData(MDR_UART2);
-		if (UART_recieved_data_length >= 6)
+		if (UART_recieved_data_length >= 2)
 		{
-			res = UART_recieved_data_buffer[2];
-			res = (res<<8)|UART_recieved_data_buffer[3];
+			//little endian
+			res = UART_recieved_data_buffer[1];
+			res = (res<<8)|UART_recieved_data_buffer[0];
 			com_angle = res;
 			UART_recieved_data_length=0;
+			recieving_data_flag = RESET;
+			uart_package_recieved_flag = SET;
 		}
 	}
 	else
 	{
-		if (uart_timeout< 1200) uart_timeout++;
-		else UART_recieved_data_length = 0;
+		if (uart_timeout<UART_TIMEOUT) uart_timeout++;
+		else 
+		{
+			UART_recieved_data_length = 0;
+			recieving_data_flag = RESET;
+		}
+	}
+}
+//-----------------------------------------------------------------------
+void UART_send_telemetry(){
+	if ((can_send_telemetry_flag == SET)&&(sending_telemetry_flag == RESET)&&(recieving_data_flag == RESET)&&(uart_package_recieved_flag == SET))
+	{
+			uart_package_recieved_flag = RESET;
+			can_send_telemetry_flag = RESET;
+			sending_telemetry_flag = SET;
+//			SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
+			
+			for (int j = 0; j < 1000; j++){}
+			PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
+			for (int i = 0; i< TELEMETRY_DATA_BUFFER_SIZE; i++)
+			{			
+					while (UART_GetFlagStatus (MDR_UART2, UART_FLAG_BUSY)== SET) {}
+					UART_SendData(MDR_UART2,telemetry_to_send[i]);				
+			}
+			sending_telemetry_flag = RESET;
+			PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 	}
 }
 //-----------------------------------------------------------------------
@@ -350,5 +389,6 @@ int main(){
 
 	while (1){
 		UART_message_parsing();
+		UART_send_telemetry();
 	}
 }

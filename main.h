@@ -42,11 +42,20 @@ extern uint8_t UART_recieved_data_buffer[BUFFER_SIZE];
 extern uint32_t UART_recieved_data_length;
 extern Protocol_parity_mode_type PROTOCOL_CURRENT_PARITY_MODE; 
 extern Protocol_mode_type PROTOCOL_CURRENT_MODE; 
-extern uint32_t RESET_DE_RO_KOSTIL_FLAG;
+
 extern DMA_ChannelInitTypeDef DMA_InitStr_TX;
 extern DMA_CtrlDataInitTypeDef DMA_PriCtrlStr_TX;
 
+
 //extern uint32_t UART_RECIEVE_IN_PROGRESS_FLAG;
+
+/*Flags*/
+extern uint8_t sending_telemetry_flag;
+extern uint32_t RESET_DE_RO_KOSTIL_FLAG;
+extern uint8_t can_send_telemetry_flag;
+extern uint8_t recieving_data_flag; //this flag is pointless, replace with UART_recieved_data_length
+extern uint8_t uart_package_recieved_flag; 
+
 
 /*Inits*/
 void init_CPU(void);
@@ -65,6 +74,7 @@ void DMA_common_ini(void);
 void USART_TX_DMA_ini(uint8_t* SourceBuffer, uint8_t Length);
 void init_debug_LED(void);
 void UART_message_parsing(void);
+void UART_send_telemetry(void);
 
 /*Functions*/
 uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert);
