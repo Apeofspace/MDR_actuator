@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------
 /*Все изменяемые параметры системы*/
-#define USE_BASIC_FILTER
-//#define USE_NO_FILTER
+////#define USE_BASIC_FILTER
+#define USE_NO_FILTER
 //#define USE_DMA_FILTER //don't!!! 
 //#define MEASURE_AND_SEND_TOK //нельзя включать одновременно с DMA фильтром
 #define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
@@ -9,7 +9,7 @@
 #define T1PSG 0
 #define T1ARR 3999
 #define T2PSG 79
-#define T2ARR 249
+#define T2ARR 9999
 #define DEADTIMECONST 400  //При 80мГц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
 #define PWMDEADZONE 0.0025  //зона нечувстсвительности
 #define PWM_KOEF_USIL 20 //коэффициент усиления
@@ -66,5 +66,5 @@
 //#define RS485_DE_RO_PIN (PORT_Pin_2|PORT_Pin_3)
 #define RS485_DE_RO_PIN PORT_Pin_2
 #define RS485_DE_RO_PORT MDR_PORTF
-#define UART485_BAUD_RATE 115200
+#define UART485_BAUD_RATE 230400
 //-----------------------------------------------------------------------

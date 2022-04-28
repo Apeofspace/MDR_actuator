@@ -31,7 +31,6 @@ extern uint16_t com_angle;
 extern uint32_t T1CCR;
 extern uint64_t timestamp_command_recieved, timestamp_obj_recieved; //время, когда было получена команда, и время, когда была отработана команда
 extern uint8_t timestamp_overflow_counter;
-//extern uint32_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
 extern uint8_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
 typedef enum {MAPINVERT = 1, MAPNONINVERT = 0} MAP_INVERT;
 typedef enum {PWMFORWARD = 1, PWMBACKWARD = 0} PWM_DIRECTION;
@@ -45,9 +44,6 @@ extern Protocol_mode_type PROTOCOL_CURRENT_MODE;
 
 extern DMA_ChannelInitTypeDef DMA_InitStr_TX;
 extern DMA_CtrlDataInitTypeDef DMA_PriCtrlStr_TX;
-
-
-//extern uint32_t UART_RECIEVE_IN_PROGRESS_FLAG;
 
 /*Flags*/
 extern uint8_t sending_telemetry_flag;
@@ -74,7 +70,6 @@ void DMA_common_ini(void);
 void USART_TX_DMA_ini(uint8_t* SourceBuffer, uint8_t Length);
 void init_debug_LED(void);
 void UART_message_parsing(void);
-void UART_send_telemetry(void);
 
 /*Functions*/
 uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert);

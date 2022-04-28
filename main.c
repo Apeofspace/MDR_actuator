@@ -237,11 +237,8 @@ void control_loop(void){
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
 	changePWM(!direction, mapped_ccr);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
 	 
-	static char d = 0;
-	d++; //делитель чтобы не так часто слал
-	if (d > 19){
-		d  = 0;
-		if (sending_telemetry_flag == RESET){
+	if (uart_package_recieved_flag == SET)
+		{
 			telemetry_to_send[0] = OBJ_angle;
 			telemetry_to_send[1] = OBJ_angle>>8;
 			telemetry_to_send[2] = COM_angle;
@@ -276,13 +273,13 @@ void control_loop(void){
 			telemetry_to_send[25] = TOK;
 			telemetry_to_send[26] = TOK>>8;
 			
-			can_send_telemetry_flag = SET;
-	}
+			send_telemetry(TELEMETRY_DATA_BUFFER_SIZE); //тут будут проблемы с плато на графике
+			uart_package_recieved_flag = RESET;
+		}
 		
 //		send_telemetry(TELEMETRY_DATA_BUFFER_SIZE);
 //		RESET_DE_RO_KOSTIL_FLAG = 1;
 //		SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
-	}
 }
 //-----------------------------------------------------------------------
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
@@ -351,26 +348,6 @@ void UART_message_parsing(){
 	}
 }
 //-----------------------------------------------------------------------
-void UART_send_telemetry(){
-	if ((can_send_telemetry_flag == SET)&&(sending_telemetry_flag == RESET)&&(recieving_data_flag == RESET)&&(uart_package_recieved_flag == SET))
-	{
-			uart_package_recieved_flag = RESET;
-			can_send_telemetry_flag = RESET;
-			sending_telemetry_flag = SET;
-//			SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
-			
-			for (int j = 0; j < 1000; j++){}
-			PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
-			for (int i = 0; i< TELEMETRY_DATA_BUFFER_SIZE; i++)
-			{			
-					while (UART_GetFlagStatus (MDR_UART2, UART_FLAG_BUSY)== SET) {}
-					UART_SendData(MDR_UART2,telemetry_to_send[i]);				
-			}
-			sending_telemetry_flag = RESET;
-			PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
-	}
-}
-//-----------------------------------------------------------------------
 int main(){
 	init_CPU();
 //	init_USB();
@@ -384,11 +361,11 @@ int main(){
 	init_UART();
 	init_SysTick();
 	init_TIMER1();
-	init_TIMER2();
+//	init_TIMER2();
 	
 
 	while (1){
 		UART_message_parsing();
-		UART_send_telemetry();
+		control_loop();
 	}
 }

@@ -79,7 +79,8 @@ void init_TIMER2(){
 //-----------------------------------------------------------------------
 void Timer2_IRQHandler(void){
 	MDR_TIMER2->STATUS &= ~(1UL << 1UL);
-	control_loop();
+//	control_loop();
+//	can_send_telemetry_flag = SET;
 }
 //-----------------------------------------------------------------------
 void SysTick_Handler(void){
