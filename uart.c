@@ -125,7 +125,8 @@ void DMA_IRQHandler(void)
 //	{
 //		Protocol_change_mode(MODE_RECIEVE);
 //	}
-	sending_telemetry_flag = RESET;
+//	sending_telemetry_flag = RESET;
+	uart_busy_flag = RESET;
 	PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 }
 //-----------------------------------------------------------------------
@@ -133,7 +134,7 @@ void DMA_IRQHandler(void)
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 {
 //	Protocol_change_mode(MODE_SEND);	
-			for (int j = 0; j < 1000; j++){}
+//			for (int j = 0; j < 1000; j++){}
 	PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 	USART_TX_DMA_ini(data_buffer, length);
 }

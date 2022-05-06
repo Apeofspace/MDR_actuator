@@ -48,7 +48,7 @@ extern DMA_CtrlDataInitTypeDef DMA_PriCtrlStr_TX;
 /*Flags*/
 extern uint8_t sending_telemetry_flag;
 extern uint32_t RESET_DE_RO_KOSTIL_FLAG;
-extern uint8_t can_send_telemetry_flag;
+extern uint8_t uart_busy_flag;
 extern uint8_t recieving_data_flag; //this flag is pointless, replace with UART_recieved_data_length
 extern uint8_t uart_package_recieved_flag; 
 

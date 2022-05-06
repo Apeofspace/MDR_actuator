@@ -9,7 +9,7 @@ uint8_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
 //uint32_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
 //uint32_t amount_of_telemetry_bytes = TELEMETRY_DATA_BUFFER_SIZE * 4;
 
-uint8_t can_send_telemetry_flag = RESET;
+uint8_t uart_busy_flag = RESET;
 uint8_t sending_telemetry_flag = RESET;
 uint8_t recieving_data_flag = RESET;
 uint8_t uart_package_recieved_flag = RESET;
@@ -227,6 +227,7 @@ void control_loop(void){
 	#if defined (MEASURE_AND_SEND_TOK)
 	TOK = get_TOK();
 	#endif
+	
 
 	if (COM_angle<COM_LIMIT_LEFT) COM_angle = COM_LIMIT_LEFT;
 	if (COM_angle>COM_LIMIT_RIGHT) COM_angle = COM_LIMIT_RIGHT;
@@ -237,7 +238,7 @@ void control_loop(void){
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
 	changePWM(!direction, mapped_ccr);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
 	 
-	if (uart_package_recieved_flag == SET)
+	if ((uart_package_recieved_flag == SET)&&(uart_busy_flag == RESET))
 		{
 			telemetry_to_send[0] = OBJ_angle;
 			telemetry_to_send[1] = OBJ_angle>>8;
@@ -273,13 +274,13 @@ void control_loop(void){
 			telemetry_to_send[25] = TOK;
 			telemetry_to_send[26] = TOK>>8;
 			
-			send_telemetry(TELEMETRY_DATA_BUFFER_SIZE); //тут будут проблемы с плато на графике
+			uart_busy_flag = SET;
+//			send_telemetry(TELEMETRY_DATA_BUFFER_SIZE); //тут будут проблемы с плато на графике
 			uart_package_recieved_flag = RESET;
+			
+//			RESET_DE_RO_KOSTIL_FLAG = 1;
+			SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
 		}
-		
-//		send_telemetry(TELEMETRY_DATA_BUFFER_SIZE);
-//		RESET_DE_RO_KOSTIL_FLAG = 1;
-//		SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
 }
 //-----------------------------------------------------------------------
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
@@ -350,22 +351,23 @@ void UART_message_parsing(){
 //-----------------------------------------------------------------------
 int main(){
 	init_CPU();
-//	init_USB();
 	init_GPIO();
-//	init_debug_LED();
 	#ifdef USE_DMA_FILTER
 	init_DMA();
 	#endif
+	
+	NVIC_SetPriority(DMA_IRQn,1);
+	NVIC_SetPriority(Timer2_IRQn,2);
+	
 	init_ADC();
 	DMA_common_ini();
 	init_UART();
 	init_SysTick();
 	init_TIMER1();
-//	init_TIMER2();
-	
+	init_TIMER2();
 
 	while (1){
 		UART_message_parsing();
-		control_loop();
+//		control_loop();
 	}
 }
