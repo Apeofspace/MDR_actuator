@@ -19,13 +19,6 @@ void deinit_TIMER(MDR_TIMER_TypeDef *Timer){
 	Timer->CNT = 0x00000000; // Начальное значение счетчика	
 }
 //-----------------------------------------------------------------------
-void init_SysTick(){
-	SysTick->LOAD = 0x00FFFFFF; 
-	SysTick->CTRL = 0;
-	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk |SysTick_CTRL_TICKINT_Msk; //HCLK and Enable and interrupt enable
-	NVIC_EnableIRQ(SysTick_IRQn);
-}
-//-----------------------------------------------------------------------
 void init_TIMER1(){
 	/*Таймер ШИМ*/
 	/*Обнуление*/
@@ -83,7 +76,3 @@ void Timer2_IRQHandler(void){
 	control_loop();
 }
 //-----------------------------------------------------------------------
-void SysTick_Handler(void){
-	timestamp_overflow_counter ++;
-}
-

@@ -2,7 +2,6 @@
 
 
 uint32_t RESET_DE_RO_KOSTIL_FLAG = RESET;
-//uint32_t UART_RECIEVE_IN_PROGRESS_FLAG = RESET;
 
 Protocol_parity_mode_type PROTOCOL_CURRENT_PARITY_MODE = MODE_ADRESS;
 Protocol_mode_type PROTOCOL_CURRENT_MODE = MODE_RECIEVE;
@@ -125,7 +124,6 @@ void DMA_IRQHandler(void)
 //	{
 //		Protocol_change_mode(MODE_RECIEVE);
 //	}
-//	sending_telemetry_flag = RESET;
 	uart_busy_flag = RESET;
 	PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 }
@@ -134,56 +132,8 @@ void DMA_IRQHandler(void)
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 {
 //	Protocol_change_mode(MODE_SEND);	
-//			for (int j = 0; j < 1000; j++){}
 	PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 	USART_TX_DMA_ini(data_buffer, length);
-}
-//-----------------------------------------------------------------------
-
-void UART2_IRQHandler()
-{	
-	uint16_t recieved_byte;
-	if (UART_GetITStatusMasked(MDR_UART2, UART_IT_RX) == SET){
-
-		recieved_byte = UART_ReceiveData(MDR_UART2);
-
-		// check for errors
-		if ((recieved_byte>>8)>0)
-		{
-			//errors found
-			UART_recieved_data_length = 0;
-			return;
-		}
-
-		UART_recieved_data_buffer[UART_recieved_data_length++] = (uint8_t) recieved_byte;
-//		
-//		//check header
-//		if (UART_recieved_data_length == 2)
-//		{
-//			if ((UART_recieved_data_buffer[0] != 0xAB)||(UART_recieved_data_buffer[1] != 0xCD))
-//			{
-//				//wrong header
-//				UART_recieved_data_length = 0;
-//				return;
-//			}
-//		}
-		
-		//check ending
-		if (UART_recieved_data_length >= 6)
-		{
-			if ((UART_recieved_data_buffer[4] != 0xEF)||(UART_recieved_data_buffer[5] != 0xEF))
-			{
-				//wrong ending
-				UART_recieved_data_length = 0;
-				return;
-			}
-			else
-			{
-				//correct message
-			}
-		}
-		UART_ClearITPendingBit(MDR_UART2, UART_IT_RX);
-	}
 }
 //-----------------------------------------------------------------------
 void Protocol_recieve_message()
@@ -263,6 +213,7 @@ void Protocol_change_parity_mode(Protocol_parity_mode_type mode){
 void Protocol_change_mode(Protocol_mode_type mode){
 	if (mode == MODE_SEND) {
 		PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
+		Protocol_change_parity_mode(MODE_ADRESS);
 	}
 	else {
 		PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
@@ -286,14 +237,5 @@ int Protocol_check_parity(uint16_t* recieved_byte){
 
 //-----------------------------------------------------------------------
 void Protocol_UART_message_recieved_callback(uint8_t* Buffer){
-	//тут могут быть серьезные проблемы, так как буффер это статическая глобальная переменная. она может быть изменена при приему нового
-	//сообщения до того как я прочитаю данные. 	
-//	flip_LED(MDR_PORTE, PORT_Pin_7);
-	
-	uint16_t data_ch1;
-	data_ch1 = (Buffer[3]<<8UL) | Buffer[4];
-	
-	com_angle = data_ch1;
-////////////////////////////////////	CDC_recieved_data_length = Buffer[2]- 4;
-////////////////////////////////////	for (int i = 0; i< CDC_recieved_data_length; i++) CDC_recieved_data_buffer[i] = Buffer[i+3];
+// 
 }
