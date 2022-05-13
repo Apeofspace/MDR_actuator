@@ -24,9 +24,7 @@ void BRD_ADC1_RunSample(uint32_t sampleEna);
 #endif
 //-----------------------------------------------------------------------
 
-#define TELEMETRY_DATA_BUFFER_SIZE 27
-//#define TELEMETRY_DATA_BUFFER_SIZE 8 
-//extern uint32_t amount_of_telemetry_bytes;
+#define TELEMETRY_DATA_BUFFER_SIZE 8
 extern uint16_t com_angle;
 extern uint32_t T1CCR;
 extern uint64_t timestamp_command_recieved, timestamp_obj_recieved; //время, когда было получена команда, и время, когда была отработана команда

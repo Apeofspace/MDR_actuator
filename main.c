@@ -245,34 +245,40 @@ void control_loop(void){
 			telemetry_to_send[2] = COM_angle;
 			telemetry_to_send[3] = COM_angle>>8;
 			
-			telemetry_to_send[4] = timestamp_command_recieved;
-			telemetry_to_send[5] = timestamp_command_recieved>>8;
-			telemetry_to_send[6] = timestamp_command_recieved>>16;
-			telemetry_to_send[7] = timestamp_command_recieved>>24;
+			telemetry_to_send[4] = mapped_ccr;
+			telemetry_to_send[5] = mapped_ccr>>8;
+			telemetry_to_send[6] = mapped_ccr>>16;
+			telemetry_to_send[7] = mapped_ccr>>24;
 			
-			telemetry_to_send[8] = timestamp_command_recieved>>32;
-			telemetry_to_send[9] = timestamp_command_recieved>>40;
-			telemetry_to_send[10] = timestamp_command_recieved>>48;
-			telemetry_to_send[11] = timestamp_command_recieved>>56;
-			
-			telemetry_to_send[12] = timestamp_obj_recieved;
-			telemetry_to_send[13] = timestamp_obj_recieved>>8;
-			telemetry_to_send[14] = timestamp_obj_recieved>>16;
-			telemetry_to_send[15] = timestamp_obj_recieved>>24;
-			
-			telemetry_to_send[16] = timestamp_obj_recieved>>32;
-			telemetry_to_send[17] = timestamp_obj_recieved>>40;
-			telemetry_to_send[18] = timestamp_obj_recieved>>48;
-			telemetry_to_send[19] = timestamp_obj_recieved>>56;
-			
-			telemetry_to_send[20] = mapped_ccr;
-			telemetry_to_send[21] = mapped_ccr>>8;
-			telemetry_to_send[22] = mapped_ccr>>16;
-			telemetry_to_send[23] = mapped_ccr>>24;
-			
-			telemetry_to_send[24] = direction;
-			telemetry_to_send[25] = TOK;
-			telemetry_to_send[26] = TOK>>8;
+//			
+//			telemetry_to_send[4] = timestamp_command_recieved;
+//			telemetry_to_send[5] = timestamp_command_recieved>>8;
+//			telemetry_to_send[6] = timestamp_command_recieved>>16;
+//			telemetry_to_send[7] = timestamp_command_recieved>>24;
+//			
+//			telemetry_to_send[8] = timestamp_command_recieved>>32;
+//			telemetry_to_send[9] = timestamp_command_recieved>>40;
+//			telemetry_to_send[10] = timestamp_command_recieved>>48;
+//			telemetry_to_send[11] = timestamp_command_recieved>>56;
+//			
+//			telemetry_to_send[12] = timestamp_obj_recieved;
+//			telemetry_to_send[13] = timestamp_obj_recieved>>8;
+//			telemetry_to_send[14] = timestamp_obj_recieved>>16;
+//			telemetry_to_send[15] = timestamp_obj_recieved>>24;
+//			
+//			telemetry_to_send[16] = timestamp_obj_recieved>>32;
+//			telemetry_to_send[17] = timestamp_obj_recieved>>40;
+//			telemetry_to_send[18] = timestamp_obj_recieved>>48;
+//			telemetry_to_send[19] = timestamp_obj_recieved>>56;
+//			
+//			telemetry_to_send[20] = mapped_ccr;
+//			telemetry_to_send[21] = mapped_ccr>>8;
+//			telemetry_to_send[22] = mapped_ccr>>16;
+//			telemetry_to_send[23] = mapped_ccr>>24;
+//			
+//			telemetry_to_send[24] = direction;
+//			telemetry_to_send[25] = TOK;
+//			telemetry_to_send[26] = TOK>>8;
 			
 			uart_busy_flag = SET;
 //			send_telemetry(TELEMETRY_DATA_BUFFER_SIZE); //тут будут проблемы с плато на графике

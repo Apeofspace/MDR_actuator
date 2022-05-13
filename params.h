@@ -2,7 +2,7 @@
 /*Все изменяемые параметры системы*/
 ////#define USE_BASIC_FILTER
 #define USE_NO_FILTER
-//#define USE_DMA_FILTER //don't!!! 
+//#define USE_DMA_FILTER //dнельзя включать одновременно с рс485
 //#define MEASURE_AND_SEND_TOK //нельзя включать одновременно с DMA фильтром
 #define ADC_MASK 0xFFC //Отбросить два последних бита с показаний АЦП
 #define BASIC_FILTER_SIZE 7UL

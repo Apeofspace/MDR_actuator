@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\Objects\drivecontrol.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\drivecontrol.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Fri May  6 13:44:49 2022
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Thu May 12 11:22:47 2022
 <BR><P>
 <H3>Maximum Stack Usage =        176 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -507,7 +507,7 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> startup_mdr32f9qx.o(.text)
 </UL>
 <P><STRONG><a name="[15]"></a>Timer2_IRQHandler</STRONG> (Thumb, 24 bytes, Stack size 8 bytes, timers.o(.text.Timer2_IRQHandler))
-<BR><BR>[Stack]<UL><LI>Max Depth = 112<LI>Call Chain = Timer2_IRQHandler &rArr; control_loop &rArr; SEND_DATA_UART_DMA &rArr; USART_TX_DMA_ini &rArr; DMA_Init &rArr; DMA_CtrlDataInit
+<BR><BR>[Stack]<UL><LI>Max Depth = 104<LI>Call Chain = Timer2_IRQHandler &rArr; control_loop &rArr; SEND_DATA_UART_DMA &rArr; USART_TX_DMA_ini &rArr; DMA_Init &rArr; DMA_CtrlDataInit
 </UL>
 <BR>[Calls]<UL><LI><a href="#[41]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;control_loop
 </UL>
@@ -700,8 +700,8 @@ Global Symbols
 <BR><BR>[Called By]<UL><LI><a href="#[41]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;control_loop
 </UL>
 
-<P><STRONG><a name="[41]"></a>control_loop</STRONG> (Thumb, 294 bytes, Stack size 40 bytes, main.o(.text.control_loop))
-<BR><BR>[Stack]<UL><LI>Max Depth = 104<LI>Call Chain = control_loop &rArr; SEND_DATA_UART_DMA &rArr; USART_TX_DMA_ini &rArr; DMA_Init &rArr; DMA_CtrlDataInit
+<P><STRONG><a name="[41]"></a>control_loop</STRONG> (Thumb, 208 bytes, Stack size 32 bytes, main.o(.text.control_loop))
+<BR><BR>[Stack]<UL><LI>Max Depth = 96<LI>Call Chain = control_loop &rArr; SEND_DATA_UART_DMA &rArr; USART_TX_DMA_ini &rArr; DMA_Init &rArr; DMA_CtrlDataInit
 </UL>
 <BR>[Calls]<UL><LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;take_timestamp
 <LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;reload_SysTick
