@@ -30,7 +30,6 @@ extern DMA_CtrlDataInitTypeDef DMA_PriCtrlStr_TX;
 
 //-----------------------------------------------------------------------
 /*Флаги*/
-extern uint32_t RESET_DE_RO_KOSTIL_FLAG;
 extern uint8_t uart_busy_flag;
 extern uint8_t recieving_data_flag; //this flag is pointless, replace with UART_recieved_data_length
 extern uint8_t uart_package_recieved_flag; 
@@ -67,6 +66,7 @@ int Protocol_check_adress(uint8_t* adress);
 int Protocol_check_parity(uint16_t* recieved_byte);
 void Protocol_UART_message_recieved_callback(uint8_t* Buffer); 
 void Protocol_recieve_message(void);
+void Protocol_send_message(uint8_t length);
 //-----------------------------------------------------------------------
 /*Прерывания*/
 void Timer2_IRQHandler(void);

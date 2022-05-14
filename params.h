@@ -7,15 +7,15 @@
 #define T1PSG 0
 #define T1ARR 3999
 #define T2PSG 79
-#define T2ARR 999
+#define T2ARR 249
 #define DEADTIMECONST 400  //При 80мГц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
 #define PWMDEADZONE 0.0025  //зона нечувстсвительности
 #define PWM_KOEF_USIL 20 //коэффициент усиления
 #define COM_LIMIT_LEFT 800 //чтобы не билось об края
 #define COM_LIMIT_RIGHT 3800
 #define OWN_ADRESS 0x01
-#define TARGET_ADRESS 0x01
-#define TELEMETRY_DATA_BUFFER_SIZE 8
+#define TARGET_ADRESS 0x00
+#define TELEMETRY_DATA_BUFFER_SIZE 13
 
 //-----------------------------------------------------------------------
 /*Порты*/

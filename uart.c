@@ -1,8 +1,5 @@
 #include "main.h"
 
-
-uint32_t RESET_DE_RO_KOSTIL_FLAG = RESET;
-
 Protocol_parity_mode_type PROTOCOL_CURRENT_PARITY_MODE = MODE_ADRESS;
 Protocol_mode_type PROTOCOL_CURRENT_MODE = MODE_RECIEVE;
 	
@@ -120,20 +117,30 @@ void DMA_IRQHandler(void)
 	DMA_Cmd(DMA_Channel_UART2_TX, DISABLE);
 	while(MDR_UART2->FR & UART_FR_BUSY);
 	
-//	if (RESET_DE_RO_KOSTIL_FLAG)	//если надо переключиться на режим приема
-//	{
-//		Protocol_change_mode(MODE_RECIEVE);
-//	}
+	Protocol_change_mode(MODE_RECIEVE);
 	uart_busy_flag = RESET;
-	PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 }
 //-----------------------------------------------------------------------
-
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 {
-//	Protocol_change_mode(MODE_SEND);	
-	PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 	USART_TX_DMA_ini(data_buffer, length);
+}
+//-----------------------------------------------------------------------
+void Protocol_send_message(uint8_t length)
+{	
+	Protocol_change_mode(MODE_SEND);
+	
+	telemetry_to_send[0] = TARGET_ADRESS;
+	UART_SendData(MDR_UART2, telemetry_to_send[0]);//отправка адреса без ДМА, т.к. всего 1 байт
+	while (UART_GetFlagStatus (MDR_UART2, UART_FLAG_BUSY)== SET)
+	
+	telemetry_to_send[1] = length + 4;
+	telemetry_to_send[2] = CRC1(&telemetry_to_send[0], &telemetry_to_send[1]);
+	
+	uint16_t crc_2 = CRC2((uint8_t*)telemetry_to_send, telemetry_to_send[1]-1);
+	telemetry_to_send[length+2] = crc_2;
+	telemetry_to_send[length+3] = crc_2>>8; //или наоборот?
+	SEND_DATA_UART_DMA(telemetry_to_send, telemetry_to_send[1]);
 }
 //-----------------------------------------------------------------------
 void Protocol_recieve_message()
@@ -212,6 +219,7 @@ void Protocol_change_parity_mode(Protocol_parity_mode_type mode){
 //-----------------------------------------------------------------------
 void Protocol_change_mode(Protocol_mode_type mode){
 	if (mode == MODE_SEND) {
+		uart_busy_flag == SET;
 		PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 		Protocol_change_parity_mode(MODE_ADRESS);
 	}
@@ -237,5 +245,12 @@ int Protocol_check_parity(uint16_t* recieved_byte){
 
 //-----------------------------------------------------------------------
 void Protocol_UART_message_recieved_callback(uint8_t* Buffer){
-// 
+	uint16_t res;
+//	little endian
+	res = UART_recieved_data_buffer[4];
+	res = (res<<8)|UART_recieved_data_buffer[3];
+	com_angle = res;
+	UART_recieved_data_length=0;
+	recieving_data_flag = RESET;
+	uart_package_recieved_flag = SET;
 }
