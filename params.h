@@ -7,7 +7,7 @@
 #define T1PSG 0
 #define T1ARR 3999
 #define T2PSG 79
-#define T2ARR 999
+#define T2ARR 249
 #define DEADTIMECONST 400  //ѕри 80м√ц 1 = 0.125 *10^-7 с (при DTG от CPU_CLK) 8 бит. 80 = 1мкс
 #define PWMDEADZONE 0.0025  //зона нечувстсвительности
 #define PWM_KOEF_USIL 20 //коэффициент усилени€

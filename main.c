@@ -118,6 +118,7 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 }
 //-----------------------------------------------------------------------
 void control_loop(void){
+	static uint8_t telemetry_divider = 0;
 	uint16_t PWMpower;
 	uint32_t mapped_ccr;
 	uint16_t OBJ_angle = get_OBJ_angle();	
@@ -131,22 +132,26 @@ void control_loop(void){
 	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, MAPNONINVERT);
 	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
 	changePWM(!direction, mapped_ccr);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
-	 
-	if ((uart_package_recieved_flag == SET)&&(uart_busy_flag == RESET))
-		{
-			telemetry_to_send[0] = OBJ_angle;
-			telemetry_to_send[1] = OBJ_angle>>8;
-			telemetry_to_send[2] = COM_angle;
-			telemetry_to_send[3] = COM_angle>>8;
-			
-			telemetry_to_send[4] = mapped_ccr;
-			telemetry_to_send[5] = mapped_ccr>>8;
-			telemetry_to_send[6] = mapped_ccr>>16;
-			telemetry_to_send[7] = mapped_ccr>>24;
-			
-			uart_busy_flag = SET;
-			uart_package_recieved_flag = RESET;
-			SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
+		
+	if (++telemetry_divider>=4)
+	{
+		telemetry_divider = 0;
+		if ((uart_package_recieved_flag == SET)&&(uart_busy_flag == RESET))
+			{
+				telemetry_to_send[0] = OBJ_angle;
+				telemetry_to_send[1] = OBJ_angle>>8;
+				telemetry_to_send[2] = COM_angle;
+				telemetry_to_send[3] = COM_angle>>8;
+				
+				telemetry_to_send[4] = mapped_ccr;
+				telemetry_to_send[5] = mapped_ccr>>8;
+				telemetry_to_send[6] = mapped_ccr>>16;
+				telemetry_to_send[7] = mapped_ccr>>24;
+				
+				uart_busy_flag = SET;
+				uart_package_recieved_flag = RESET;
+				SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
+			}
 		}
 }
 //-----------------------------------------------------------------------
