@@ -75,8 +75,8 @@ uint16_t get_COM_angle(void){
 }
 
 //-----------------------------------------------------------------------
-uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel){
-	static uint16_t filter[BASIC_FILTER_SIZE][3];
+uint16_t filter_basic(uint16_t data, SIGNAL_CHANNEL channel){
+	static uint16_t filter[BASIC_FILTER_SIZE][FILTER_NUMBER_OF_CHANNELS];
 	static uint8_t filter_count = 0;
 	uint16_t sum = 0; //должно хватить: 4 бита впереди свободные. значит можно просуммировать до 16 значений
 	filter[filter_count][channel] = data;
@@ -93,7 +93,7 @@ uint16_t get_OBJ_angle(void){
 		//run ADC
 	ADC1_Start();
 	while (!(MDR_ADC->ADC1_STATUS & ADCx_FLAG_END_OF_CONVERSION));	
-	return filter_analog(ADC1_GetResult()&ADC_MASK, OBJ);
+	return filter_basic(ADC1_GetResult()&ADC_MASK, OBJ);
 }
 #elif defined (USE_NO_FILTER)
 	//run ADC
@@ -104,35 +104,48 @@ uint16_t get_OBJ_angle(void){
 }
 #endif
 //-----------------------------------------------------------------------
-/* Коэффициент заполнения умножается на koef_usil, но не может быть больше 1 */
-uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t koef_usil, MAP_INVERT invert){
+uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t koef_usil, float dead_zone, MAP_INVERT invert){
+	/* data - входное значение
+		 base_min, base_max - пределы значений, в которых может колебаться входной сигнал
+		 range_min, range_max - пределы значений, в которых может быть выходной сигнал
+		 koef_usil - коэффициент усиления
+		 dead_zone - мертвая зона (от 0 до 1)
+		 invert - нужно ли инвертировать результат
+		 result - выходное значение в диапазоне range, соответствующее входному значению в диапазоне base, умноженному на коэффициент усиления*/
 	if ((range_min>range_max) || (base_min>base_max) || (data<base_min)) return 0;
 	uint32_t delta_range = range_max-range_min;
-	uint32_t delta_base = base_max - base_min;
+	uint32_t delta_base = base_max - base_min; 
 	uint32_t data_prived = data - base_min;
 	float coef_zapoln = ((float)data_prived/(float)(delta_base+1));
-	if (coef_zapoln<(float)PWMDEADZONE) return (invert == MAPNONINVERT)? range_min : range_max; //зона нечувствительности
+	if (coef_zapoln<(float)dead_zone) return (invert == MAPNONINVERT)? range_min : range_max; //зона нечувствительности
 	coef_zapoln = coef_zapoln * koef_usil;
 	if (coef_zapoln>1) coef_zapoln = 1;
 	return (invert == MAPNONINVERT)? range_min + (uint32_t)(coef_zapoln*(float)delta_range) : range_max - (uint32_t)(coef_zapoln*(float)delta_range);
 }
 //-----------------------------------------------------------------------
-void control_loop(void){
+void main_loop(void){
+	static uint16_t previous_OBJ_angle = 0;
 	static uint8_t telemetry_divider = 0;
-	uint16_t PWMpower;
-	uint32_t mapped_ccr;
+	uint16_t error_signal;
+	uint32_t mapped_timer_ccr_value;
 	uint16_t OBJ_angle = get_OBJ_angle();	
 	uint16_t COM_angle = get_COM_angle();	
+	
+	if (previous_OBJ_angle == 0) previous_OBJ_angle = OBJ_angle;
+	
 
 	if (COM_angle<COM_LIMIT_LEFT) COM_angle = COM_LIMIT_LEFT;
 	if (COM_angle>COM_LIMIT_RIGHT) COM_angle = COM_LIMIT_RIGHT;
 
-	PWMpower = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;
+	error_signal = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;	
+	error_signal = (previous_OBJ_angle < OBJ_angle) ? error_signal + (OBJ_angle - previous_OBJ_angle) : error_signal - (previous_OBJ_angle - OBJ_angle);
+	
 	PWM_DIRECTION direction = (OBJ_angle>COM_angle)? PWMBACKWARD : PWMFORWARD;
-	mapped_ccr = map_PWM(PWMpower, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, MAPNONINVERT);
-	if (mapped_ccr > T1ARR) mapped_ccr = T1ARR;
-	changePWM(!direction, mapped_ccr);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
+	mapped_timer_ccr_value = map_PWM(error_signal, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, (float)PWM_DEAD_ZONE, MAPNONINVERT);
+	if (mapped_timer_ccr_value > T1ARR) mapped_timer_ccr_value = T1ARR;
+	changePWM(!direction, mapped_timer_ccr_value);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
 		
+	previous_OBJ_angle = OBJ_angle; //обратная связь по скорости
 	if (++telemetry_divider>=4)
 	{
 		telemetry_divider = 0;
@@ -143,10 +156,10 @@ void control_loop(void){
 				telemetry_to_send[2] = COM_angle;
 				telemetry_to_send[3] = COM_angle>>8;
 				
-				telemetry_to_send[4] = mapped_ccr;
-				telemetry_to_send[5] = mapped_ccr>>8;
-				telemetry_to_send[6] = mapped_ccr>>16;
-				telemetry_to_send[7] = mapped_ccr>>24;
+				telemetry_to_send[4] = mapped_timer_ccr_value;
+				telemetry_to_send[5] = mapped_timer_ccr_value>>8;
+				telemetry_to_send[6] = mapped_timer_ccr_value>>16;
+				telemetry_to_send[7] = mapped_timer_ccr_value>>24;
 				
 				uart_busy_flag = SET;
 				uart_package_recieved_flag = RESET;
@@ -206,7 +219,7 @@ int main(){
 	NVIC_SetPriority(Timer2_IRQn,2);
 	
 	init_ADC();
-	DMA_common_ini();
+	init_DMA();
 	init_UART();
 	init_TIMER1();
 	init_TIMER2();

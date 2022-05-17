@@ -1,8 +1,6 @@
 #include "main.h"
 
 
-uint32_t RESET_DE_RO_KOSTIL_FLAG = RESET;
-
 Protocol_parity_mode_type PROTOCOL_CURRENT_PARITY_MODE = MODE_ADRESS;
 Protocol_mode_type PROTOCOL_CURRENT_MODE = MODE_RECIEVE;
 	
@@ -88,7 +86,7 @@ void init_UART(){
 }
 
 //-----------------------------------------------------------------------
-void DMA_common_ini(void)
+void init_DMA(void)
 	{
 	/* Костыли для обхода ошибок в DMA миландра */
   RST_CLK_PCLKcmd (RST_CLK_PCLK_SSP1 | RST_CLK_PCLK_SSP2 | RST_CLK_PCLK_DMA, ENABLE);// Включение тактирования модуля DMA
@@ -119,11 +117,6 @@ void DMA_IRQHandler(void)
 	UART_DMACmd(UART485, UART_DMA_TXE, DISABLE);
 	DMA_Cmd(DMA_Channel_UART2_TX, DISABLE);
 	while(MDR_UART2->FR & UART_FR_BUSY);
-	
-//	if (RESET_DE_RO_KOSTIL_FLAG)	//если надо переключиться на режим приема
-//	{
-//		Protocol_change_mode(MODE_RECIEVE);
-//	}
 	uart_busy_flag = RESET;
 	PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
 }

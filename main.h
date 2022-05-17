@@ -30,7 +30,6 @@ extern DMA_CtrlDataInitTypeDef DMA_PriCtrlStr_TX;
 
 //-----------------------------------------------------------------------
 /*Флаги*/
-extern uint32_t RESET_DE_RO_KOSTIL_FLAG;
 extern uint8_t uart_busy_flag;
 extern uint8_t recieving_data_flag; //this flag is pointless, replace with UART_recieved_data_length
 extern uint8_t uart_package_recieved_flag; 
@@ -45,16 +44,16 @@ void deinit_all_GPIO(void);
 void deinit_TIMER(MDR_TIMER_TypeDef *Timer);
 void init_ADC(void);
 void init_UART(void);
-void DMA_common_ini(void);
+void init_DMA(void);
 void USART_TX_DMA_ini(uint8_t* SourceBuffer, uint8_t Length);
 //-----------------------------------------------------------------------
 /*Функции*/
-uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t saturation_coef, MAP_INVERT invert);
+uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t koef_usil, float dead_zone, MAP_INVERT invert);
 void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr);
-void control_loop(void);
+void main_loop(void);
 uint16_t get_OBJ_angle(void);
 uint16_t get_COM_angle(void);
-uint16_t filter_analog(uint16_t data, SIGNAL_CHANNEL channel);
+uint16_t filter_basic(uint16_t data, SIGNAL_CHANNEL channel);
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length);
 void UART_message_parsing(void);
 //-----------------------------------------------------------------------
