@@ -150,7 +150,21 @@ void main_loop(void){
 	{
 		telemetry_divider = 0;
 		if ((uart_package_recieved_flag == SET)&&(uart_busy_flag == RESET))
-			{
+			{				
+				uart_busy_flag = SET;
+				uart_package_recieved_flag = RESET;
+				#if defined(USE_PROTOCOL)
+				telemetry_to_send[3] = OBJ_angle;
+				telemetry_to_send[4] = OBJ_angle>>8;
+				telemetry_to_send[5] = COM_angle;
+				telemetry_to_send[6] = COM_angle>>8;
+				
+				telemetry_to_send[7] = mapped_ccr;
+				telemetry_to_send[8] = mapped_ccr>>8;
+				telemetry_to_send[9] = mapped_ccr>>16;
+				telemetry_to_send[10] = mapped_ccr>>24;
+				Protocol_send_message(TELEMETRY_DATA_BUFFER_SIZE);
+				#else
 				telemetry_to_send[0] = OBJ_angle;
 				telemetry_to_send[1] = OBJ_angle>>8;
 				telemetry_to_send[2] = COM_angle;
@@ -160,10 +174,8 @@ void main_loop(void){
 				telemetry_to_send[5] = mapped_timer_ccr_value>>8;
 				telemetry_to_send[6] = mapped_timer_ccr_value>>16;
 				telemetry_to_send[7] = mapped_timer_ccr_value>>24;
-				
-				uart_busy_flag = SET;
-				uart_package_recieved_flag = RESET;
 				SEND_DATA_UART_DMA(telemetry_to_send, TELEMETRY_DATA_BUFFER_SIZE);
+				#endif
 			}
 		}
 }
@@ -181,17 +193,20 @@ void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
 	}	
 }
 //-----------------------------------------------------------------------
-void UART_message_parsing(){
-	uint16_t res;
+void UART_message_parsing(){	
 	static uint16_t uart_timeout = 0;
 	if (UART_GetFlagStatus (MDR_UART2, UART_FLAG_RXFF)== SET)
 	{
 		recieving_data_flag = SET;
 		uart_timeout = 0;
+		#if defined(USE_PROTOCOL)
+		Protocol_recieve_message();
+		#else
 		UART_recieved_data_buffer[UART_recieved_data_length++] = (uint8_t) UART_ReceiveData(MDR_UART2);
 		if (UART_recieved_data_length >= 2)
 		{
 			//little endian
+			uint16_t res;
 			res = UART_recieved_data_buffer[1];
 			res = (res<<8)|UART_recieved_data_buffer[0];
 			com_angle = res;
@@ -199,6 +214,7 @@ void UART_message_parsing(){
 			recieving_data_flag = RESET;
 			uart_package_recieved_flag = SET;
 		}
+		#endif
 	}
 	else
 	{

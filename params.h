@@ -1,5 +1,6 @@
 //-----------------------------------------------------------------------
 /*Все изменяемые параметры системы*/
+//#define USE_PROTOCOL
 //#define USE_BASIC_FILTER
 #define USE_NO_FILTER
 #define ADC_MASK 0xFFE //Отбросить последние биты с показаний АЦП
@@ -14,9 +15,13 @@
 #define PWM_KOEF_USIL 20 //коэффициент усиления
 #define COM_LIMIT_LEFT 800 //чтобы не билось об края
 #define COM_LIMIT_RIGHT 3800
+#if defined(USE_PROTOCOL)
 #define OWN_ADRESS 0x01
 #define TARGET_ADRESS 0x00
+#define TELEMETRY_DATA_BUFFER_SIZE 13
+#else
 #define TELEMETRY_DATA_BUFFER_SIZE 8
+#endif
 
 //-----------------------------------------------------------------------
 /*Порты*/

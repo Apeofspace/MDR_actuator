@@ -66,6 +66,7 @@ int Protocol_check_adress(uint8_t* adress);
 int Protocol_check_parity(uint16_t* recieved_byte);
 void Protocol_UART_message_recieved_callback(uint8_t* Buffer); 
 void Protocol_recieve_message(void);
+void Protocol_send_message(uint8_t length);
 //-----------------------------------------------------------------------
 /*Прерывания*/
 void Timer2_IRQHandler(void);

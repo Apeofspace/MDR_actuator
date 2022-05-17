@@ -68,7 +68,11 @@ void init_UART(){
 	 // Создание структуры UART_StructInit c дефолтными параметрами
 	UART_StructInit(&UART_InitStruct);
 	UART_InitStruct.UART_WordLength = UART_WordLength8b;
+	#if defined(USE_PROTOCOL)
+	UART_InitStruct.UART_Parity = UART_Parity_1;
+	#else
 	UART_InitStruct.UART_Parity = UART_Parity_No;
+	#endif
 	UART_InitStruct.UART_BaudRate = UART485_BAUD_RATE;
 	
 	 // Инициализация модуля UART
@@ -117,17 +121,41 @@ void DMA_IRQHandler(void)
 	UART_DMACmd(UART485, UART_DMA_TXE, DISABLE);
 	DMA_Cmd(DMA_Channel_UART2_TX, DISABLE);
 	while(MDR_UART2->FR & UART_FR_BUSY);
-	uart_busy_flag = RESET;
+	#if defined(USE_PROTOCOL)
+	Protocol_change_mode(MODE_RECIEVE);
+	#else
 	PORT_ResetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
+	#endif
+	uart_busy_flag = RESET;
 }
 //-----------------------------------------------------------------------
-
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 {
-//	Protocol_change_mode(MODE_SEND);	
-	PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN);
+	#if !defined(USE_PROTOCOL)
+	PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN); // ЗАКОМЕНТИТЬ ЭТО ПРИ ИСПОЛЬЗОВАНИИ ПРОТОКОЛА
+	#endif
+	
 	USART_TX_DMA_ini(data_buffer, length);
 }
+//-----------------------------------------------------------------------
+#if defined(USE_PROTOCOL)
+void Protocol_send_message(uint8_t length)
+{	
+	Protocol_change_mode(MODE_SEND);
+	
+	telemetry_to_send[0] = TARGET_ADRESS;
+	UART_SendData(MDR_UART2, telemetry_to_send[0]);//отправка адреса без ДМА, т.к. всего 1 байт
+	while (UART_GetFlagStatus (MDR_UART2, UART_FLAG_BUSY)== SET)
+	
+	telemetry_to_send[1] = length + 4;
+	telemetry_to_send[2] = CRC1(&telemetry_to_send[0], &telemetry_to_send[1]);
+	
+	uint16_t crc_2 = CRC2((uint8_t*)telemetry_to_send, telemetry_to_send[1]-1);
+	telemetry_to_send[length+2] = crc_2;
+	telemetry_to_send[length+3] = crc_2>>8; //или наоборот?
+	SEND_DATA_UART_DMA(telemetry_to_send, telemetry_to_send[1]);
+}
+
 //-----------------------------------------------------------------------
 void Protocol_recieve_message()
 {
@@ -230,5 +258,13 @@ int Protocol_check_parity(uint16_t* recieved_byte){
 
 //-----------------------------------------------------------------------
 void Protocol_UART_message_recieved_callback(uint8_t* Buffer){
-// 
+	uint16_t res;
+//	little endian
+	res = UART_recieved_data_buffer[4];
+	res = (res<<8)|UART_recieved_data_buffer[3];
+	com_angle = res;
+	UART_recieved_data_length=0;
+	recieving_data_flag = RESET;
+	uart_package_recieved_flag = SET;
 }
+#endif
