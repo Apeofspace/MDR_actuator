@@ -124,28 +124,22 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 }
 //-----------------------------------------------------------------------
 void main_loop(void){
-	static uint16_t previous_OBJ_angle = 0;
 	static uint8_t telemetry_divider = 0;
 	uint16_t error_signal;
 	uint32_t mapped_timer_ccr_value;
 	uint16_t OBJ_angle = get_OBJ_angle();	
 	uint16_t COM_angle = get_COM_angle();	
-	
-	if (previous_OBJ_angle == 0) previous_OBJ_angle = OBJ_angle;
-	
 
 	if (COM_angle<COM_LIMIT_LEFT) COM_angle = COM_LIMIT_LEFT;
 	if (COM_angle>COM_LIMIT_RIGHT) COM_angle = COM_LIMIT_RIGHT;
 
 	error_signal = (OBJ_angle>COM_angle)?  OBJ_angle-COM_angle : COM_angle-OBJ_angle;	
-	error_signal = (previous_OBJ_angle < OBJ_angle) ? error_signal + (OBJ_angle - previous_OBJ_angle) : error_signal - (previous_OBJ_angle - OBJ_angle);
 	
 	PWM_DIRECTION direction = (OBJ_angle>COM_angle)? PWMBACKWARD : PWMFORWARD;
 	mapped_timer_ccr_value = map_PWM(error_signal, 0, 0xFFF, 0, T1ARR, PWM_KOEF_USIL, (float)PWM_DEAD_ZONE, MAPNONINVERT);
 	if (mapped_timer_ccr_value > T1ARR) mapped_timer_ccr_value = T1ARR;
-	changePWM(!direction, mapped_timer_ccr_value);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
+	change_PWM(!direction, mapped_timer_ccr_value);	// ***********тут можно менять дирекшн и !дирекшн в зависимости от того как потенциометр подключен
 		
-	previous_OBJ_angle = OBJ_angle; //обратная связь по скорости
 	if (++telemetry_divider>=4)
 	{
 		telemetry_divider = 0;
@@ -154,16 +148,16 @@ void main_loop(void){
 				uart_busy_flag = SET;
 				uart_package_recieved_flag = RESET;
 				#if defined(USE_PROTOCOL)
-				telemetry_to_send[3] = OBJ_angle;
-				telemetry_to_send[4] = OBJ_angle>>8;
-				telemetry_to_send[5] = COM_angle;
-				telemetry_to_send[6] = COM_angle>>8;
+				telemetry_to_send[0] = OBJ_angle;
+				telemetry_to_send[1] = OBJ_angle>>8;
+				telemetry_to_send[2] = COM_angle;
+				telemetry_to_send[3] = COM_angle>>8;
 				
-				telemetry_to_send[7] = mapped_ccr;
-				telemetry_to_send[8] = mapped_ccr>>8;
-				telemetry_to_send[9] = mapped_ccr>>16;
-				telemetry_to_send[10] = mapped_ccr>>24;
-				Protocol_send_message(TELEMETRY_DATA_BUFFER_SIZE);
+				telemetry_to_send[4] = mapped_timer_ccr_value;
+				telemetry_to_send[5] = mapped_timer_ccr_value>>8;
+				telemetry_to_send[6] = mapped_timer_ccr_value>>16;
+				telemetry_to_send[7] = mapped_timer_ccr_value>>24;
+				Protocol_send_message(telemetry_to_send, 8);
 				#else
 				telemetry_to_send[0] = OBJ_angle;
 				telemetry_to_send[1] = OBJ_angle>>8;
@@ -180,7 +174,7 @@ void main_loop(void){
 		}
 }
 //-----------------------------------------------------------------------
-void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
+void change_PWM(PWM_DIRECTION direction, uint32_t mapped_ccr){
 	//поочередный
 	switch (direction){
 		case PWMFORWARD:

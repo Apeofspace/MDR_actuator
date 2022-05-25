@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------
 /*Все изменяемые параметры системы*/
-//#define USE_PROTOCOL
+#define USE_PROTOCOL
 //#define USE_BASIC_FILTER
 #define USE_NO_FILTER
 #define ADC_MASK 0xFFE //Отбросить последние биты с показаний АЦП
@@ -18,7 +18,7 @@
 #if defined(USE_PROTOCOL)
 #define OWN_ADRESS 0x01
 #define TARGET_ADRESS 0x00
-#define TELEMETRY_DATA_BUFFER_SIZE 13
+#define TELEMETRY_DATA_BUFFER_SIZE 12
 #else
 #define TELEMETRY_DATA_BUFFER_SIZE 8
 #endif

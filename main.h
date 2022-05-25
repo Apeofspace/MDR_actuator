@@ -49,7 +49,7 @@ void USART_TX_DMA_ini(uint8_t* SourceBuffer, uint8_t Length);
 //-----------------------------------------------------------------------
 /*Функции*/
 uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t koef_usil, float dead_zone, MAP_INVERT invert);
-void changePWM(PWM_DIRECTION direction, uint32_t mapped_ccr);
+void change_PWM(PWM_DIRECTION direction, uint32_t mapped_ccr);
 void main_loop(void);
 uint16_t get_OBJ_angle(void);
 uint16_t get_COM_angle(void);
@@ -66,7 +66,7 @@ int Protocol_check_adress(uint8_t* adress);
 int Protocol_check_parity(uint16_t* recieved_byte);
 void Protocol_UART_message_recieved_callback(uint8_t* Buffer); 
 void Protocol_recieve_message(void);
-void Protocol_send_message(uint8_t length);
+void Protocol_send_message(uint8_t* data_buffer, uint8_t length);
 //-----------------------------------------------------------------------
 /*Прерывания*/
 void Timer2_IRQHandler(void);

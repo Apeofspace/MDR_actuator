@@ -132,28 +132,35 @@ void DMA_IRQHandler(void)
 void SEND_DATA_UART_DMA(uint8_t* data_buffer, uint8_t length)
 {
 	#if !defined(USE_PROTOCOL)
-	PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN); // ЗАКОМЕНТИТЬ ЭТО ПРИ ИСПОЛЬЗОВАНИИ ПРОТОКОЛА
+	PORT_SetBits(RS485_DE_RO_PORT, RS485_DE_RO_PIN); 
 	#endif
 	
 	USART_TX_DMA_ini(data_buffer, length);
 }
 //-----------------------------------------------------------------------
 #if defined(USE_PROTOCOL)
-void Protocol_send_message(uint8_t length)
+void Protocol_send_message(uint8_t* data_buffer, uint8_t length)
 {	
+	uint8_t extended_data_buffer[TELEMETRY_DATA_BUFFER_SIZE];
 	Protocol_change_mode(MODE_SEND);
 	
-	telemetry_to_send[0] = TARGET_ADRESS;
-	UART_SendData(MDR_UART2, telemetry_to_send[0]);//отправка адреса без ДМА, т.к. всего 1 байт
+	extended_data_buffer[0] = TARGET_ADRESS;
+	UART_SendData(MDR_UART2, extended_data_buffer[0]);//отправка адреса без ДМА, т.к. всего 1 байт
 	while (UART_GetFlagStatus (MDR_UART2, UART_FLAG_BUSY)== SET)
 	
-	telemetry_to_send[1] = length + 4;
-	telemetry_to_send[2] = CRC1(&telemetry_to_send[0], &telemetry_to_send[1]);
+	extended_data_buffer[1] = length + 3;
+//	extended_data_buffer[2] = CRC1(&data_buffer[0], &data_buffer[1]);
+	
+	for (int i = 2; i<length+2; i++)
+	{
+		extended_data_buffer[i] = *data_buffer;
+		data_buffer++;
+	}
 	
 	uint16_t crc_2 = CRC2((uint8_t*)telemetry_to_send, telemetry_to_send[1]-1);
-	telemetry_to_send[length+2] = crc_2;
-	telemetry_to_send[length+3] = crc_2>>8; //или наоборот?
-	SEND_DATA_UART_DMA(telemetry_to_send, telemetry_to_send[1]);
+	extended_data_buffer[length+1] = crc_2;
+	extended_data_buffer[length+2] = crc_2>>8; //или наоборот?
+	SEND_DATA_UART_DMA(extended_data_buffer, extended_data_buffer[1]);
 }
 
 //-----------------------------------------------------------------------
@@ -182,13 +189,13 @@ void Protocol_recieve_message()
 							
 			/* Приём данных */
 			if (PROTOCOL_CURRENT_PARITY_MODE == MODE_DATA){
-				if (UART_recieved_data_length == 3){ //Принята контрольная сумма CRC1
-					/* Принят заголовок, проверка конрольной суммы*/
-					if (CRC1(&UART_recieved_data_buffer[0], &UART_recieved_data_buffer[1])!= UART_recieved_data_buffer[2]){
-						Protocol_change_parity_mode(MODE_ADRESS); // обнулить	
-						return ;
-					}
-				}
+//				if (UART_recieved_data_length == 3){ //Принята контрольная сумма CRC1
+//					/* Принят заголовок, проверка конрольной суммы*/
+//					if (CRC1(&UART_recieved_data_buffer[0], &UART_recieved_data_buffer[1])!= UART_recieved_data_buffer[2]){
+//						Protocol_change_parity_mode(MODE_ADRESS); // обнулить	
+//						return ;
+//					}
+//				}
 				if ((UART_recieved_data_length == (UART_recieved_data_buffer[1] + 1))&&UART_recieved_data_length>3){ //Принята контрольная сумма CRC2
 					/* Приняты все данные, проверка контрольной суммы */
 					uint16_t CRC_recieved = ((uint16_t)(UART_recieved_data_buffer[UART_recieved_data_buffer[1]-1])<<8) | (uint16_t)(UART_recieved_data_buffer[UART_recieved_data_buffer[1]]);
@@ -260,8 +267,8 @@ int Protocol_check_parity(uint16_t* recieved_byte){
 void Protocol_UART_message_recieved_callback(uint8_t* Buffer){
 	uint16_t res;
 //	little endian
-	res = UART_recieved_data_buffer[4];
-	res = (res<<8)|UART_recieved_data_buffer[3];
+	res = UART_recieved_data_buffer[3];
+	res = (res<<8)|UART_recieved_data_buffer[2];
 	com_angle = res;
 	UART_recieved_data_length=0;
 	recieving_data_flag = RESET;
