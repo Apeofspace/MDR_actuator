@@ -1,7 +1,7 @@
 #include "main.h"
 
 uint32_t T1CCR = 65;
-uint16_t com_angle = 2250;
+uint16_t com_angle = 2300;
 uint8_t telemetry_to_send[TELEMETRY_DATA_BUFFER_SIZE];
 
 uint8_t uart_busy_flag = RESET;
@@ -104,7 +104,7 @@ uint16_t get_OBJ_angle(void){
 }
 #endif
 //-----------------------------------------------------------------------
-uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t koef_usil, float dead_zone, MAP_INVERT invert){
+uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t Ku, float dead_zone, MAP_INVERT invert){
 	/* data - входное значение
 		 base_min, base_max - пределы значений, в которых может колебаться входной сигнал
 		 range_min, range_max - пределы значений, в которых может быть выходной сигнал
@@ -118,7 +118,7 @@ uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t r
 	uint32_t data_prived = data - base_min;
 	float coef_zapoln = ((float)data_prived/(float)(delta_base+1));
 	if (coef_zapoln<(float)dead_zone) return (invert == MAPNONINVERT)? range_min : range_max; //зона нечувствительности
-	coef_zapoln = coef_zapoln * koef_usil;
+	coef_zapoln = coef_zapoln * Ku;
 	if (coef_zapoln>1) coef_zapoln = 1;
 	return (invert == MAPNONINVERT)? range_min + (uint32_t)(coef_zapoln*(float)delta_range) : range_max - (uint32_t)(coef_zapoln*(float)delta_range);
 }
@@ -145,7 +145,6 @@ void main_loop(void){
 		telemetry_divider = 0;
 		if ((uart_package_recieved_flag == SET)&&(uart_busy_flag == RESET))
 			{				
-				uart_busy_flag = SET;
 				uart_package_recieved_flag = RESET;
 				#if defined(USE_PROTOCOL)
 				telemetry_to_send[0] = OBJ_angle;

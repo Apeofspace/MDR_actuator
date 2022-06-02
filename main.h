@@ -48,7 +48,7 @@ void init_DMA(void);
 void USART_TX_DMA_ini(uint8_t* SourceBuffer, uint8_t Length);
 //-----------------------------------------------------------------------
 /*Функции*/
-uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t koef_usil, float dead_zone, MAP_INVERT invert);
+uint32_t map_PWM(uint32_t data, uint32_t base_min, uint32_t base_max, uint32_t range_min, uint32_t range_max, uint8_t Ku, float dead_zone, MAP_INVERT invert);
 void change_PWM(PWM_DIRECTION direction, uint32_t mapped_ccr);
 void main_loop(void);
 uint16_t get_OBJ_angle(void);
